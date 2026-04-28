@@ -57,5 +57,4 @@ Customer-facing banners update automatically across App, Web Portal, and Kiosk b
 | `servicenow-ticket.html` | Mock ServiceNow change ticket |
 
 ---
-
-Project Godiva — Automation Project by Eunice Tan
+AI-Driven Service Event Automation · Designed by Eunice Tan
