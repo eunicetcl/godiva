@@ -1,0 +1,2568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Incident Response Co-Pilot - Interactive Demo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #0F766E;
+            --primary-dark: #0D5A52;
+            --bg: #F7F8FA;
+            --bg-white: #FFFFFF;
+            --border: #E1E4E8;
+            --text-primary: #24292E;
+            --text-secondary: #586069;
+            --text-muted: #959DA5;
+            --success: #0CAF60;
+            --warning: #F59E0B;
+            --danger: #D73A49;
+            --critical: #DC2626;
+            --major: #D97706;
+            --minor: #2563EB;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #F0F9F8 0%, #E8F7F5 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .header {
+            background: var(--bg-white);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .phase-badge {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #CCFBF1, #A7F3D0);
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            font-weight: 600;
+            color: var(--primary);
+            font-size: 0.875rem;
+        }
+
+        .header-desc {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .card {
+            background: var(--bg-white);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 30px;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .card-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .input-section {
+            margin-bottom: 20px;
+        }
+
+        .label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 16px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 0.8rem;
+            line-height: 1.6;
+            resize: vertical;
+            background: var(--bg);
+            transition: border-color 0.2s;
+        }
+
+        .textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.875rem;
+            background: var(--bg-white);
+            cursor: pointer;
+        }
+
+        .btn {
+            padding: 14px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .output-panel {
+            display: none;
+        }
+
+        .output-panel.active {
+            display: block;
+        }
+
+        .result-section {
+            margin-bottom: 30px;
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .result-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .result-icon.classification {
+            background: #F0F4FF;
+        }
+
+        .result-icon.action {
+            background: #FEF3C7;
+        }
+
+        .result-icon.approval {
+            background: #DBEAFE;
+        }
+
+        .result-title {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .result-content {
+            padding: 20px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
+        .result-grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .result-row:last-child {
+            border-bottom: none;
+        }
+
+        .result-label {
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .result-value {
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .severity-critical {
+            color: var(--critical);
+        }
+
+        .severity-major {
+            color: var(--major);
+        }
+
+        .severity-minor {
+            color: var(--minor);
+        }
+
+        .confidence-high {
+            color: var(--success);
+        }
+
+        .action-list {
+            display: grid;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .action-item {
+            padding: 14px;
+            background: var(--bg-white);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .action-check {
+            color: var(--success);
+            font-weight: 700;
+            font-size: 1.125rem;
+        }
+
+        .action-name {
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .approval-box {
+            padding: 20px;
+            background: linear-gradient(135deg, #FEF3C7, #FDE68A);
+            border: 2px solid var(--warning);
+            border-radius: 8px;
+            margin-top: 12px;
+        }
+
+        .approval-title {
+            font-weight: 700;
+            font-size: 0.875rem;
+            margin-bottom: 8px;
+            color: #92400E;
+        }
+
+        .approval-text {
+            font-size: 0.8rem;
+            color: #78350F;
+        }
+
+        .sop-box {
+            padding: 16px;
+            background: #F0FDF4;
+            border: 1px solid var(--success);
+            border-radius: 8px;
+            margin-top: 12px;
+        }
+
+        .sop-title {
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-bottom: 8px;
+            color: #047857;
+        }
+
+        .sop-text {
+            font-size: 0.8rem;
+            color: #065F46;
+        }
+
+        .example-signals {
+            margin-top: 20px;
+        }
+
+        .example-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-secondary);
+        }
+
+        .example-btns {
+            display: grid;
+            gap: 8px;
+        }
+
+        .example-btn {
+            padding: 10px 14px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            text-align: left;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .example-btn:hover {
+            background: #CCFBF1;
+            border-color: var(--primary);
+        }
+
+        .processing {
+            display: none;
+            padding: 20px;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .processing.active {
+            display: block;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .ld-preview {
+            grid-column: 1 / 3;
+            display: none;
+        }
+
+        .ld-preview.active {
+            display: block;
+        }
+
+        .ld-header {
+            background: #24292E;
+            color: white;
+            padding: 20px 24px;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .ld-logo {
+            font-weight: 700;
+            font-size: 1.125rem;
+        }
+
+        .ld-body {
+            background: var(--bg-white);
+            border: 1px solid var(--border);
+            border-top: none;
+            border-radius: 0 0 12px 12px;
+            padding: 24px;
+        }
+
+        .flag-card {
+            padding: 20px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .flag-info {
+            flex: 1;
+        }
+
+        .flag-key {
+            font-family: 'SF Mono', Monaco, monospace;
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-bottom: 4px;
+        }
+
+        .flag-desc {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .toggle {
+            width: 48px;
+            height: 24px;
+            background: #D1D5DB;
+            border-radius: 24px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle::before {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: all 0.3s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle.on {
+            background: var(--success);
+        }
+
+        .toggle.on::before {
+            transform: translateX(24px);
+        }
+
+        .ready-box {
+            padding: 20px;
+            background: linear-gradient(135deg, #D1FAE5, #A7F3D0);
+            border: 2px solid var(--success);
+            border-radius: 8px;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .ready-icon {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+        }
+
+        .ready-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: #047857;
+            margin-bottom: 8px;
+        }
+
+        .ready-text {
+            font-size: 0.875rem;
+            color: #065F46;
+        }
+
+        /* Process Flow Diagram */
+        .process-flow {
+            background: var(--bg-white);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .flow-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 24px;
+            text-align: center;
+            color: var(--text-primary);
+        }
+
+        .flow-steps {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .flow-step {
+            flex: 1;
+            min-width: 180px;
+            position: relative;
+        }
+
+        .step-box {
+            padding: 24px 20px;
+            background: linear-gradient(135deg, #F0F4FF, #CCFBF1);
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .step-box:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(64, 91, 255, 0.2);
+        }
+
+        .step-box.completed {
+            background: linear-gradient(135deg, #D1FAE5, #A7F3D0);
+            border-color: var(--success);
+        }
+
+        .step-box.active {
+            background: linear-gradient(135deg, #FEF3C7, #FDE68A);
+            border-color: var(--warning);
+            animation: pulse-border 2s infinite;
+        }
+
+        @keyframes pulse-border {
+            0%, 100% { border-color: var(--warning); }
+            50% { border-color: #F59E0B; }
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.125rem;
+            margin: 0 auto 12px;
+        }
+
+        .step-box.completed .step-number {
+            background: var(--success);
+        }
+
+        .step-box.active .step-number {
+            background: var(--warning);
+        }
+
+        .step-icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .step-label {
+            font-weight: 700;
+            font-size: 0.875rem;
+            margin-bottom: 6px;
+            color: var(--text-primary);
+        }
+
+        .step-desc {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .flow-arrow {
+            font-size: 2rem;
+            color: var(--primary);
+            flex-shrink: 0;
+        }
+
+        .flow-arrow.completed {
+            color: var(--success);
+        }
+
+        @media (max-width: 1200px) {
+            .flow-steps {
+                flex-direction: column;
+            }
+            
+            .flow-arrow {
+                transform: rotate(90deg);
+            }
+            
+            .flow-step {
+                width: 100%;
+            }
+        }
+
+        .how-it-works {
+            background: linear-gradient(135deg, #F0F4FF, #CCFBF1);
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .how-it-works-title {
+            font-weight: 700;
+            font-size: 0.875rem;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .how-it-works-text {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* Footer Credit */
+        /* ── Track 3: Notification Preview ── */
+        .track-section {
+            background: var(--bg-white);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 30px;
+            margin-top: 30px;
+        }
+
+        .track-label {
+            display: inline-block;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 4px 10px;
+            border-radius: 20px;
+            margin-bottom: 12px;
+        }
+
+        .track3-label { background: #EDE9FE; color: #5B21B6; }
+        .track4-label { background: #DBEAFE; color: #1D4ED8; }
+
+        .track-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .track-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .notif-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .notif-tab {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1.5px solid var(--border);
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            background: var(--bg);
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        .notif-tab.active {
+            border-color: var(--primary);
+            background: #CCFBF1;
+            color: var(--primary);
+        }
+
+        /* Teams card */
+        .teams-card {
+            border: 1.5px solid #E1E4E8;
+            border-radius: 10px;
+            overflow: hidden;
+            font-size: 0.85rem;
+        }
+
+        .teams-header {
+            background: #464EB8;
+            color: white;
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        .teams-body {
+            padding: 16px;
+            background: white;
+        }
+
+        .teams-sender {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .teams-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #464EB8, #6366f1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .teams-sender-name {
+            font-weight: 700;
+            font-size: 0.8rem;
+            color: #24292E;
+        }
+
+        .teams-time {
+            font-size: 0.7rem;
+            color: #959DA5;
+        }
+
+        .teams-message-body {
+            background: #F3F2F1;
+            border-radius: 8px;
+            padding: 14px 16px;
+            line-height: 1.7;
+        }
+
+        .teams-field {
+            display: flex;
+            gap: 6px;
+            font-size: 0.8rem;
+            margin-bottom: 4px;
+        }
+
+        .teams-field-label {
+            font-weight: 700;
+            color: #24292E;
+            min-width: 120px;
+            flex-shrink: 0;
+        }
+
+        .teams-field-value {
+            color: #444D56;
+        }
+
+        .teams-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 14px;
+            flex-wrap: wrap;
+        }
+
+        .teams-btn {
+            padding: 6px 14px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: default;
+        }
+
+        .teams-btn-primary { background: #464EB8; color: white; }
+        .teams-btn-danger { background: #DC2626; color: white; }
+        .teams-btn-ghost { background: white; color: #24292E; border: 1.5px solid #E1E4E8; }
+
+        /* Slack card */
+        .slack-card {
+            border: 1.5px solid #E1E4E8;
+            border-radius: 10px;
+            overflow: hidden;
+            font-size: 0.85rem;
+        }
+
+        .slack-header {
+            background: #4A154B;
+            color: white;
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        .slack-body {
+            padding: 16px;
+            background: white;
+        }
+
+        .slack-channel-name {
+            font-size: 0.75rem;
+            color: #959DA5;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .slack-message {
+            display: flex;
+            gap: 10px;
+        }
+
+        .slack-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            background: linear-gradient(135deg, #E01E5A, #ECB22E);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .slack-content { flex: 1; }
+
+        .slack-sender-row {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .slack-sender {
+            font-weight: 700;
+            font-size: 0.8rem;
+            color: #1D1C1D;
+        }
+
+        .slack-ts {
+            font-size: 0.7rem;
+            color: #959DA5;
+        }
+
+        .slack-text {
+            font-size: 0.8rem;
+            color: #1D1C1D;
+            line-height: 1.6;
+        }
+
+        .slack-attachment {
+            margin-top: 10px;
+            border-left: 4px solid;
+            padding: 10px 14px;
+            border-radius: 0 6px 6px 0;
+            background: #F8F8F8;
+        }
+
+        .slack-attachment-title {
+            font-weight: 700;
+            font-size: 0.8rem;
+            margin-bottom: 6px;
+        }
+
+        .slack-attachment-field {
+            font-size: 0.75rem;
+            color: #444D56;
+            margin-bottom: 3px;
+        }
+
+        .slack-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+
+        /* ── Track 4: Customer Banner ── */
+        .banner-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .channel-frame {
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .channel-frame-label {
+            background: var(--bg);
+            padding: 8px 14px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .channel-screen {
+            padding: 14px;
+            background: white;
+            min-height: 160px;
+        }
+
+        .channel-topbar {
+            height: 8px;
+            border-radius: 4px;
+            background: var(--border);
+            margin-bottom: 10px;
+            width: 60%;
+        }
+
+        .channel-body-line {
+            height: 6px;
+            border-radius: 3px;
+            background: #F0F0F0;
+            margin-bottom: 6px;
+        }
+
+        .disruption-banner {
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            transition: all 0.4s ease;
+        }
+
+        .disruption-banner.normal { background: #D1FAE5; border: 1.5px solid #10B981; }
+        .disruption-banner.degraded { background: #FEF3C7; border: 1.5px solid #F59E0B; }
+        .disruption-banner.outage { background: #FEE2E2; border: 1.5px solid #EF4444; }
+        .disruption-banner.recovery { background: #DBEAFE; border: 1.5px solid #3B82F6; }
+
+        .disruption-banner-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+
+        .disruption-banner-text {
+            font-size: 0.72rem;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        .disruption-banner.normal .disruption-banner-text { color: #065F46; }
+        .disruption-banner.degraded .disruption-banner-text { color: #78350F; }
+        .disruption-banner.outage .disruption-banner-text { color: #7F1D1D; }
+        .disruption-banner.recovery .disruption-banner-text { color: #1E3A5F; }
+
+        .status-legend {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+            padding: 14px 16px;
+            background: var(--bg);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .placeholder-section {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+        }
+
+        .placeholder-section .placeholder-icon {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+        }
+
+        .placeholder-section p {
+            font-size: 0.875rem;
+        }
+
+        @media (max-width: 900px) {
+            .banner-grid { grid-template-columns: 1fr; }
+        }
+
+        .footer-credit {
+            margin-top: 40px;
+            padding: 20px;
+            text-align: center;
+            border-top: 1px solid var(--border);
+        }
+
+        .footer-credit-text {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .footer-credit-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Customer Message Template */
+        .message-preview {
+            margin-top: 12px;
+        }
+
+        .message-banner {
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid;
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+            background: var(--bg-white);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .message-banner.critical {
+            border-left-color: #DC2626;
+            background: linear-gradient(135deg, #FEE2E2, #FFFFFF);
+        }
+
+        .message-banner.warning {
+            border-left-color: #D97706;
+            background: linear-gradient(135deg, #FEF3C7, #FFFFFF);
+        }
+
+        .message-banner.info {
+            border-left-color: #2563EB;
+            background: linear-gradient(135deg, #DBEAFE, #FFFFFF);
+        }
+
+        .message-icon {
+            font-size: 2rem;
+            flex-shrink: 0;
+        }
+
+        .message-content {
+            flex: 1;
+        }
+
+        .message-title {
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .message-body {
+            font-size: 0.875rem;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .message-footer {
+            font-size: 0.813rem;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .message-channels {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+        }
+
+        .channel-tag {
+            padding: 6px 12px;
+            background: var(--bg-white);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Process Flow Diagram -->
+        <div class="process-flow">
+            <h2 class="flow-title">📊 Project Godiva Workflow</h2>
+            <div class="flow-steps">
+                <!-- Step 1 -->
+                <div class="flow-step">
+                    <div class="step-box" id="flow-step-1">
+                        <div class="step-number">1</div>
+                        <div class="step-icon">📧</div>
+                        <div class="step-label">Signal Received</div>
+                        <div class="step-desc">Incident email or alert arrives</div>
+                    </div>
+                </div>
+                
+                <div class="flow-arrow" id="arrow-1">→</div>
+                
+                <!-- Step 2 -->
+                <div class="flow-step">
+                    <div class="step-box" id="flow-step-2">
+                        <div class="step-number">2</div>
+                        <div class="step-icon">🤖</div>
+                        <div class="step-label">AI Analysis</div>
+                        <div class="step-desc">Classify & recommend actions</div>
+                    </div>
+                </div>
+                
+                <div class="flow-arrow" id="arrow-2">→</div>
+                
+                <!-- Step 3 -->
+                <div class="flow-step">
+                    <div class="step-box" id="flow-step-3">
+                        <div class="step-number">3</div>
+                        <div class="step-icon">👤</div>
+                        <div class="step-label">Human Approval</div>
+                        <div class="step-desc">Review & authorize</div>
+                    </div>
+                </div>
+                
+                <div class="flow-arrow" id="arrow-3">→</div>
+                
+                <!-- Step 4 -->
+                <div class="flow-step">
+                    <div class="step-box" id="flow-step-4">
+                        <div class="step-number">4</div>
+                        <div class="step-icon">🚀</div>
+                        <div class="step-label">Execute</div>
+                        <div class="step-desc">Toggle flags in LaunchDarkly</div>
+                    </div>
+                </div>
+                
+                <div class="flow-arrow" id="arrow-4">→</div>
+                
+                <!-- Step 5 -->
+                <div class="flow-step">
+                    <div class="step-box" id="flow-step-5">
+                        <div class="step-number">5</div>
+                        <div class="step-icon">✅</div>
+                        <div class="step-label">Complete</div>
+                        <div class="step-desc">All channels synchronized</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="how-it-works">
+                <div class="how-it-works-title">💡 How to Use This Demo</div>
+                <div class="how-it-works-text">
+                    Click any example scenario below → AI analyzes automatically → Approve → Toggle flags → Done!
+                </div>
+            </div>
+        </div>
+
+        <!-- Header -->
+        <div class="header">
+            <div class="header-top">
+                <h1>🚀 Incident Response Co-Pilot</h1>
+                <div class="phase-badge">Interactive Demo</div>
+            </div>
+            <p class="header-desc">
+                Paste service event signals (emails/alerts) below. The AI will extract details, classify severity, 
+                recommend actions, and determine approval path. No automated ingestion yet - this validates the decision logic.
+            </p>
+        </div>
+
+        <div class="main-grid">
+            <!-- Input Panel -->
+            <div class="card">
+                <h2 class="card-title">Signal Input</h2>
+                <p class="card-subtitle">Paste an incident email or alert message</p>
+
+                <div class="input-section">
+                    <label class="label">Service Event Signal</label>
+                    <textarea 
+                        class="textarea" 
+                        id="signal-input" 
+                        placeholder="Click an example below to see how it works, or paste your own incident email/alert here..."></textarea>
+                </div>
+
+                <div class="input-section">
+                    <label class="label">Signal Source (Optional)</label>
+                    <select class="select" id="signal-source">
+                        <option value="email">Email</option>
+                        <option value="slack">Slack</option>
+                        <option value="monitoring">Monitoring System</option>
+                        <option value="manual">Manual Report</option>
+                    </select>
+                </div>
+
+                <button class="btn btn-primary" id="process-btn">
+                    Analyze Signal & Generate Recommendation
+                </button>
+
+                <!-- Example Signals -->
+                <div class="example-signals">
+                    <div class="example-title">📋 Example Signals</div>
+                    <div class="example-btns">
+                        <button class="example-btn" onclick="loadExample('paynow')">
+                            🔴 PayNow Gateway Failure (CRITICAL)
+                        </button>
+                        <button class="example-btn" onclick="loadExample('maintenance')">
+                            🟠 Scheduled Database Maintenance (MAJOR)
+                        </button>
+                        <button class="example-btn" onclick="loadExample('api')">
+                            🟡 API Performance Degradation (MAJOR)
+                        </button>
+                        <button class="example-btn" onclick="loadExample('feature')">
+                            🟡 Mastercard Gateway Failure (MAJOR)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Output Panel -->
+            <div class="card output-panel" id="output-panel">
+                <h2 class="card-title">AI Analysis Results</h2>
+                <p class="card-subtitle">Structured event, classification, and recommended actions</p>
+
+                <div class="processing" id="processing">
+                    <div class="spinner"></div>
+                    <p>AI processing signal...</p>
+                </div>
+
+                <div id="results"></div>
+            </div>
+
+            <!-- Approval Card -->
+            <div class="card" id="approval-card" style="display: none;">
+                <h2 class="card-title">👤 Approval Route</h2>
+                <div class="ready-box" id="ready-box">
+                    <div class="ready-icon">✅</div>
+                    <div class="ready-title">Execution Ready</div>
+                    <div class="ready-text">Awaiting approval...</div>
+                    <button class="btn btn-primary" onclick="approveExecution()" style="margin-top: 20px;">✓ Approve & Enable Toggles</button>
+                </div>
+            </div>
+
+            <!-- LaunchDarkly Preview -->
+            <div class="card ld-preview" id="ld-preview" style="display: none;">
+                <div class="ld-header">
+                    <span class="ld-logo">🚀 LaunchDarkly</span>
+                    <span style="opacity: 0.7;" id="ld-status-text">Execution Ready (Awaiting Approval)</span>
+                </div>
+                <div class="ld-body" id="ld-flags"></div>
+            </div>
+
+            <!-- Execution Complete Card -->
+            <div class="card" id="execution-complete-card" style="display: none !important;">
+                <h2 class="card-title">Execution</h2>
+                <div id="execution-box"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const examples = {
+            paynow: {
+                signal: `CRITICAL ALERT: PayNow Payment Gateway Complete Failure
+
+Source: Payment Monitoring System
+Timestamp: 2026-04-27 14:23:45 SGT (Just now)
+Duration: Ongoing for 8 minutes
+Next Update: Every 5 minutes
+
+Gateway: PayNow Singapore
+Status: COMPLETE OUTAGE
+Error Rate: 100% (all transactions failing)
+
+Error Details:
+- API returning 503 Service Unavailable
+- Connection timeout to PayNow backend
+- No response from payment processor
+- First detected: 14:15:32 SGT
+- Escalated to CRITICAL: 14:18:45 SGT
+
+User Impact (Last 8 minutes):
+- Failed payment attempts: 2,847
+- Affected users: ~1,200 customers unable to pay bills
+- Peak impact window: 14:15 - 14:30 (lunch hour peak)
+- Support tickets received: 47 calls about payment failures
+- App store reviews: 12 negative reviews posted (1-star)
+
+Services Affected:
+- Mobile App bill payments (since 14:15)
+- Web Portal bill payments (since 14:16)
+- Kiosk bill payments (since 14:15)
+
+Customer Experience Impact:
+- Users cannot pay electricity bills via PayNow
+- Frustration building - lunch hour is peak payment time
+- Risk of late payment penalties for customers
+- Negative sentiment on social media starting
+
+Recommended Actions:
+- Disable PayNow payment option immediately
+- Redirect to alternative payment methods (Credit Card, GIRO)
+- Display clear maintenance notice
+- Send push notification to affected users
+- ETA for resolution: Unknown (PayNow investigating)`,
+                
+                classification: {
+                    type: 'Payment Gateway Outage',
+                    severity: 'CRITICAL',
+                    confidence: '98%',
+                    impact: 'All PayNow bill payments failing - 1,200+ customers affected',
+                    affectedSystems: 'PayNow Gateway, Mobile App, Web Portal, Kiosk'
+                },
+                
+                actions: [
+                    'disable_paynow_payment',
+                    'enable_payment_fallback_creditcard',
+                    'show_paynow_maintenance_banner'
+                ],
+                
+                approval: {
+                    path: 'Product Lead + Engineering Lead',
+                    deadline: 'Within 1 hour',
+                    reason: 'CRITICAL severity - affects all PayNow transactions'
+                },
+                
+                sop: 'SOP-PAY-001: Payment Gateway Failure Response'
+            },
+
+            api: {
+                signal: `MAJOR ALERT: API Response Time Degradation
+
+Source: New Relic APM
+Alert ID: NR-2026-0427-1430
+Timestamp: 2026-04-27 14:30:12 SGT
+Duration: Ongoing for 12 minutes
+Severity: MAJOR (threshold exceeded 10 min ago)
+
+Service: User Profile API
+Endpoint: /api/v2/users/profile
+Environment: Production (SG Region)
+
+Performance Metrics:
+- Current Avg Response Time: 3,200ms (↑ 2567% from baseline)
+- Baseline Response Time: 120ms
+- p95 Response Time: 5,800ms
+- p99 Response Time: 8,200ms
+- Error Rate: 12% (↑ from normal 0.3%)
+- Timeout Rate: 8%
+
+Timeline:
+  14:18 SGT - Performance degradation detected
+  14:20 SGT - Threshold breach (500ms exceeded)
+  14:25 SGT - Escalated to MAJOR (10x baseline)
+  14:30 SGT - Current status (ongoing)
+
+Impact Analysis:
+- Affected requests: ~2,400 in last 12 minutes
+- Failed requests: ~288 (12% error rate)
+- Affected users: ~500 concurrent users
+- Primary impact: Profile loading delays on mobile app
+- Secondary impact: Session timeout errors increasing
+
+Root Cause (Preliminary):
+- Database query performance degradation
+- Suspect: Missing index on user_profiles table
+- Query execution time: 2,800ms (normal: 45ms)
+- Database CPU: 78% (normal: 25%)
+
+Estimated Recovery:
+- Manual fix: 30 minutes (deploy index + cache warm-up)
+- Workaround: Enable caching - immediate relief
+- Full resolution: Deploy fix + monitor 15 min`,
+                
+                classification: {
+                    type: 'API Performance Degradation',
+                    severity: 'MAJOR',
+                    confidence: '95%',
+                    impact: 'Degraded user experience - slow profile loading',
+                    affectedSystems: 'User Profile API, Mobile App'
+                },
+                
+                actions: [
+                    'enable_api_cache_boost',
+                    'enable_profile_fallback_mode',
+                    'show_performance_degradation_notice'
+                ],
+                
+                approval: {
+                    path: 'Engineering Lead',
+                    deadline: 'Within 2 hours',
+                    reason: 'MAJOR severity - user experience impact'
+                },
+                
+                sop: 'SOP-API-003: API Performance Degradation'
+            },
+
+            feature: {
+                signal: `MAJOR ALERT: Mastercard Payment Gateway Failure
+
+Source: Payment Monitoring System
+Alert ID: PMT-2026-0427-1445
+Timestamp: 2026-04-27 14:45 SGT
+Duration: Ongoing for 15 minutes
+Severity: MAJOR
+
+Gateway: Mastercard Payment Processor
+Status: INTERMITTENT FAILURES
+Error Rate: 78% (high failure rate)
+
+Error Details:
+- Gateway returning "Transaction Declined" errors
+- Connection timeouts intermittently
+- 3D Secure authentication failures
+- First detected: 14:30 SGT
+- Escalated to MAJOR: 14:40 SGT
+
+Timeline:
+  14:30 - First Mastercard decline detected
+  14:35 - Error rate exceeded 50%
+  14:40 - Escalated to MAJOR severity
+  14:45 - Current status (ongoing)
+
+User Impact (Last 15 minutes):
+- Failed Mastercard payments: 287 transactions
+- Affected users: ~180 customers
+- Successful payments (Visa/PayNow): Working normally
+- Support tickets: 23 calls about Mastercard payment failures
+- App reviews: 5 negative reviews mentioning Mastercard issues
+
+Payment Method Breakdown:
+  Mastercard: 78% failure rate (AFFECTED)
+  Visa: 2% failure rate (Normal)
+  PayNow: 1% failure rate (Normal)
+  GIRO: Working (Normal)
+
+Customer Experience Impact:
+- Customers frustrated trying multiple times
+- Some switching to Visa/PayNow successfully
+- Others giving up and will retry later
+- Confusion: "Is it my card or the system?"
+- Support team overwhelmed with Mastercard queries
+
+Root Cause (Preliminary):
+- Mastercard acquirer bank experiencing issues
+- Affecting multiple merchants in Singapore
+- Expected resolution: 30-45 minutes
+- Workaround available: Disable Mastercard temporarily
+
+Recommended Actions:
+- Temporarily disable Mastercard payment option
+- Display clear notice: "Mastercard temporarily unavailable"
+- Redirect users to alternative payment methods
+- Send push notification to users
+- Monitor Visa/PayNow capacity to handle increased load
+- Re-enable once Mastercard confirms resolution`,
+                
+                classification: {
+                    type: 'Payment Gateway Outage',
+                    severity: 'MAJOR',
+                    confidence: '96%',
+                    impact: 'Mastercard payments failing - 78% error rate affecting ~180 users',
+                    affectedSystems: 'Mastercard Gateway, Payment Processing, Mobile App, Web Portal'
+                },
+                
+                actions: [
+                    'disable_mastercard_payment_option',
+                    'enable_payment_method_fallback',
+                    'show_mastercard_maintenance_banner'
+                ],
+                
+                approval: {
+                    path: 'Engineering Lead + Product Lead',
+                    deadline: 'Within 2 hours',
+                    reason: 'MAJOR severity - significant user impact but alternatives available'
+                },
+                
+                sop: 'SOP-PAY-002: Payment Gateway Partial Failure'
+            },
+
+            maintenance: {
+                signal: `SCHEDULED MAINTENANCE NOTIFICATION
+
+Source: Infrastructure Team
+Created: 2026-04-25 10:00 SGT (2 days advance notice)
+Scheduled Start: Sunday, 28 April 2026, 02:00 SGT
+Scheduled End: Sunday, 28 April 2026, 06:00 SGT
+Total Duration: 4 hours
+Current Time: 2026-04-27 14:30 SGT (36 hours before maintenance)
+
+Maintenance Event: Database Migration & Upgrade
+Change ID: CHG-2026-0428-001
+Approval Status: Approved by Change Advisory Board (CAB)
+
+Maintenance Details:
+- PostgreSQL upgrade 14.2 → 16.1
+- Schema migrations required
+- Read-only mode during migration
+- Database backup: 01:30-02:00 SGT (30 min)
+- Migration execution: 02:00-05:30 SGT (3.5 hr)
+- Verification & testing: 05:30-06:00 SGT (30 min)
+
+Timeline Breakdown:
+  01:30 - Enable maintenance banner (30 min warning)
+  02:00 - Enable read-only mode (start of maintenance)
+  02:00 - Disable payment processing
+  02:00 - Disable booking system
+  06:00 - Re-enable all services
+  06:15 - Remove maintenance banner
+
+Customer Impact:
+- All write operations will be blocked (4 hours)
+- Users can browse but cannot make purchases
+- Payments, bookings, profile updates affected
+- Expected traffic: ~15% of weekday (Sunday early morning)
+- ~85% reduction in normal Sunday traffic during window
+
+Required Actions (To Execute at 01:30 SGT):
+- Enable system-wide maintenance mode
+- Display maintenance banner with countdown timer
+- Enable read-only database mode
+- Disable payment processing
+- Disable booking system
+- Notify customer support team (on-call roster)
+
+Rollback Plan:
+- If critical issues: Abort at any point before 04:00
+- Rollback time: ~30 minutes to restore from backup
+- Decision point: 04:00 SGT (go/no-go for completion)`,
+                
+                classification: {
+                    type: 'Scheduled Maintenance',
+                    severity: 'MAJOR',
+                    confidence: '99%',
+                    impact: 'Planned downtime - all write operations unavailable for 4 hours',
+                    affectedSystems: 'Database, Payments, Bookings, User Profiles, All Channels'
+                },
+                
+                actions: [
+                    'enable_maintenance_mode',
+                    'enable_read_only_database',
+                    'disable_payment_processing',
+                    'show_maintenance_banner_with_countdown',
+                    'disable_booking_system'
+                ],
+                
+                approval: {
+                    path: 'Engineering Lead + Product Lead',
+                    deadline: 'Within 2 hours',
+                    reason: 'MAJOR severity - planned but high customer impact'
+                },
+                
+                sop: 'SOP-MAINT-001: Scheduled Maintenance Execution'
+            }
+        };
+
+        function loadExample(type) {
+            // Fill the textarea
+            document.getElementById('signal-input').value = examples[type].signal;
+            
+            // Auto-scroll to show it loaded
+            document.getElementById('signal-input').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // Optional: Auto-process after a brief delay so user can see it loaded
+            setTimeout(() => {
+                processSignal();
+            }, 500);
+        }
+
+        document.getElementById('process-btn').addEventListener('click', processSignal);
+
+        function processSignal() {
+            const input = document.getElementById('signal-input').value.trim();
+            
+            if (!input) {
+                alert('Please paste a signal first');
+                return;
+            }
+
+            // Reset flow
+            resetFlowDiagram();
+            
+            // Mark Step 1 as completed
+            updateFlowStep(1, 'completed');
+
+            // Detect which example was used
+            let exampleData = null;
+            if (input.includes('PayNow')) exampleData = examples.paynow;
+            else if (input.includes('SCHEDULED MAINTENANCE') || input.includes('Database Migration')) exampleData = examples.maintenance;
+            else if (input.includes('API Response')) exampleData = examples.api;
+            else if (input.includes('Mastercard') || input.includes('MASTERCARD')) exampleData = examples.feature;
+            
+            if (!exampleData) {
+                alert('Please use one of the example signals for this demo');
+                return;
+            }
+
+            // Show processing
+            const outputPanel = document.getElementById('output-panel');
+            const processing = document.getElementById('processing');
+            const results = document.getElementById('results');
+            const ldPreview = document.getElementById('ld-preview');
+            
+            outputPanel.classList.add('active');
+            processing.classList.add('active');
+            results.innerHTML = '';
+            ldPreview.classList.remove('active');
+
+            // Mark Step 2 as active
+            updateFlowStep(2, 'active');
+
+            // Simulate AI processing
+            setTimeout(() => {
+                processing.classList.remove('active');
+                displayResults(exampleData);
+                displayLaunchDarkly(exampleData);
+                
+                // Mark Step 2 as completed, Step 3 as active
+                updateFlowStep(2, 'completed');
+                updateFlowStep(3, 'active');
+            }, 2000);
+        }
+
+        function resetFlowDiagram() {
+            for (let i = 1; i <= 5; i++) {
+                const step = document.getElementById(`flow-step-${i}`);
+                const arrow = document.getElementById(`arrow-${i}`);
+                step.classList.remove('completed', 'active');
+                if (arrow) arrow.classList.remove('completed');
+            }
+        }
+
+        function updateFlowStep(stepNum, status) {
+            const step = document.getElementById(`flow-step-${stepNum}`);
+            const arrow = document.getElementById(`arrow-${stepNum}`);
+            
+            if (status === 'completed') {
+                step.classList.remove('active');
+                step.classList.add('completed');
+                if (arrow) arrow.classList.add('completed');
+            } else if (status === 'active') {
+                step.classList.remove('completed');
+                step.classList.add('active');
+            }
+            
+            // Scroll to flow diagram to show progress
+            document.querySelector('.process-flow').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function displayResults(data) {
+            // Build timing section if it's a maintenance scenario
+            let timingSection = '';
+            if (data.classification.type === 'Scheduled Maintenance') {
+                timingSection = `
+                    <div class="result-row">
+                        <span class="result-label">Scheduled Start:</span>
+                        <span class="result-value">Sunday, 28 Apr 2026, 02:00 SGT</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label">Scheduled End:</span>
+                        <span class="result-value">Sunday, 28 Apr 2026, 06:00 SGT</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label">Duration:</span>
+                        <span class="result-value">4 hours</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label">Time Until Start:</span>
+                        <span class="result-value" style="color: #D97706; font-weight: 700;">36 hours</span>
+                    </div>
+                `;
+            } else if (data.classification.type === 'Payment Gateway Outage') {
+                timingSection = `
+                    <div class="result-row">
+                        <span class="result-label">Incident Start:</span>
+                        <span class="result-value">14:15:32 SGT</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label">Duration:</span>
+                        <span class="result-value" style="color: #DC2626; font-weight: 700;">8 minutes (ongoing)</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label">Expected Resolution:</span>
+                        <span class="result-value">Unknown - Under Investigation</span>
+                    </div>
+                `;
+            } else if (data.classification.type === 'API Performance Degradation') {
+                timingSection = `
+                    <div class="result-row">
+                        <span class="result-label">Incident Start:</span>
+                        <span class="result-value">14:18 SGT</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label">Duration:</span>
+                        <span class="result-value" style="color: #D97706; font-weight: 700;">12 minutes (ongoing)</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label">Expected Resolution:</span>
+                        <span class="result-value">30 minutes (with workaround: immediate)</span>
+                    </div>
+                `;
+            } else if (data.classification.type === 'Feature Rollback') {
+                timingSection = `
+                    <div class="result-row">
+                        <span class="result-label">Feature Deployed:</span>
+                        <span class="result-value">12:30 SGT (2h 15m ago)</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label">Issue Detected:</span>
+                        <span class="result-value">14:30 SGT (2h post-deploy)</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label">Approval Deadline:</span>
+                        <span class="result-value">16:00 SGT (1h 15m remaining)</span>
+                    </div>
+                `;
+            } else if (data.classification.type === 'Payment Gateway Outage' && !input.includes('PayNow')) {
+                timingSection = `
+                    <div class="result-row">
+                        <span class="result-label">Incident Start:</span>
+                        <span class="result-value">14:30 SGT</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label">Duration:</span>
+                        <span class="result-value" style="color: #D97706; font-weight: 700;">15 minutes (ongoing)</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label">Expected Resolution:</span>
+                        <span class="result-value">30-45 minutes (acquirer bank issue)</span>
+                    </div>
+                `;
+            }
+
+            const html = `
+                <!-- Classification -->
+                <div class="result-section">
+                    <div class="result-header">
+                        <div class="result-icon classification">🎯</div>
+                        <div class="result-title">Event Classification</div>
+                    </div>
+                    <div class="result-content">
+                        <div class="result-grid">
+                            <div class="result-row">
+                                <span class="result-label">Event Type:</span>
+                                <span class="result-value">${data.classification.type}</span>
+                            </div>
+                            <div class="result-row">
+                                <span class="result-label">Severity:</span>
+                                <span class="result-value severity-${data.classification.severity.toLowerCase()}">${data.classification.severity}</span>
+                            </div>
+                            <div class="result-row">
+                                <span class="result-label">Confidence:</span>
+                                <span class="result-value confidence-high">${data.classification.confidence}</span>
+                            </div>
+                            ${timingSection}
+                            <div class="result-row">
+                                <span class="result-label">Impact:</span>
+                                <span class="result-value">${data.classification.impact}</span>
+                            </div>
+                            <div class="result-row">
+                                <span class="result-label">Affected Systems:</span>
+                                <span class="result-value">${data.classification.affectedSystems}</span>
+                            </div>
+                        </div>
+                        <div class="sop-box">
+                            <div class="sop-title">📖 Relevant SOP</div>
+                            <div class="sop-text">${data.sop}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recommended Actions -->
+                <div class="result-section">
+                    <div class="result-header">
+                        <div class="result-icon action">⚙️</div>
+                        <div class="result-title">Recommended Action Bundle</div>
+                    </div>
+                    <div class="result-content">
+                        <div class="action-list">
+                            ${data.actions.map(action => `
+                                <div class="action-item">
+                                    <span class="action-check">✓</span>
+                                    <span class="action-name">${action}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Approval Path -->
+                <div class="result-section">
+                    <div class="result-header">
+                        <div class="result-icon approval">👤</div>
+                        <div class="result-title">Approval Path</div>
+                    </div>
+                    <div class="result-content">
+                        <div class="result-grid">
+                            <div class="result-row">
+                                <span class="result-label">Required Approvers:</span>
+                                <span class="result-value">${data.approval.path}</span>
+                            </div>
+                            <div class="result-row">
+                                <span class="result-label">Approval Deadline:</span>
+                                <span class="result-value">${data.approval.deadline}</span>
+                            </div>
+                        </div>
+                        <div class="approval-box">
+                            <div class="approval-title">⚠️ Why This Approval Level?</div>
+                            <div class="approval-text">${data.approval.reason}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Customer Message Template -->
+                <div class="result-section">
+                    <div class="result-header">
+                        <div class="result-icon" style="background: linear-gradient(135deg, rgba(37, 99, 235, 0.2), rgba(37, 99, 235, 0.1));">📱</div>
+                        <div class="result-title">Customer Message Template</div>
+                    </div>
+                    <div class="result-content">
+                        <div class="message-preview" id="message-preview"></div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('results').innerHTML = html;
+            
+            // Generate customer message
+            generateCustomerMessage(data);
+        }
+
+        function generateCustomerMessage(data) {
+            const messagePreview = document.getElementById('message-preview');
+            
+            let message = '';
+            let messageType = 'info';
+            
+            if (data.classification.type === 'Payment Gateway Outage' && data.actions[0].includes('paynow')) {
+                messageType = 'critical';
+                message = `
+                    <div class="message-banner critical">
+                        <div class="message-icon">⚠️</div>
+                        <div class="message-content">
+                            <div class="message-title">PayNow Temporarily Unavailable</div>
+                            <div class="message-body">
+                                We're currently experiencing technical issues with PayNow payments. 
+                                Please use Credit Card or GIRO to pay your bill.
+                            </div>
+                            <div class="message-footer">
+                                We apologize for the inconvenience and are working to restore service as quickly as possible.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="message-channels">
+                        <div class="channel-tag">📱 Mobile App</div>
+                        <div class="channel-tag">💻 Web Portal</div>
+                        <div class="channel-tag">🏪 Kiosk</div>
+                    </div>
+                `;
+            } else if (data.classification.type === 'Scheduled Maintenance') {
+                messageType = 'warning';
+                message = `
+                    <div class="message-banner warning">
+                        <div class="message-icon">🔧</div>
+                        <div class="message-content">
+                            <div class="message-title">Scheduled Maintenance This Sunday</div>
+                            <div class="message-body">
+                                We'll be upgrading our systems on Sunday, 28 April from 2:00 AM to 6:00 AM (SGT). 
+                                During this time, bill payments and account updates will be temporarily unavailable.
+                            </div>
+                            <div class="message-footer">
+                                You can still view your bills and usage. Thank you for your patience!
+                            </div>
+                        </div>
+                    </div>
+                    <div class="message-channels">
+                        <div class="channel-tag">📱 Mobile App</div>
+                        <div class="channel-tag">💻 Web Portal</div>
+                        <div class="channel-tag">📧 Email</div>
+                        <div class="channel-tag">🔔 Push Notification</div>
+                    </div>
+                `;
+            } else if (data.classification.type === 'API Performance Degradation') {
+                messageType = 'warning';
+                message = `
+                    <div class="message-banner warning">
+                        <div class="message-icon">⏱️</div>
+                        <div class="message-content">
+                            <div class="message-title">System Running Slower Than Usual</div>
+                            <div class="message-body">
+                                You may experience slower loading times. We're working on it and expect 
+                                normal service to resume shortly.
+                            </div>
+                            <div class="message-footer">
+                                All your data is safe. Thank you for your patience.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="message-channels">
+                        <div class="channel-tag">📱 Mobile App</div>
+                        <div class="channel-tag">💻 Web Portal</div>
+                    </div>
+                `;
+            } else if (data.classification.type === 'Payment Gateway Outage') {
+                // Mastercard
+                messageType = 'warning';
+                message = `
+                    <div class="message-banner warning">
+                        <div class="message-icon">💳</div>
+                        <div class="message-content">
+                            <div class="message-title">Mastercard Temporarily Unavailable</div>
+                            <div class="message-body">
+                                We're experiencing issues with Mastercard payments. Please use Visa, PayNow, 
+                                or GIRO to pay your bill.
+                            </div>
+                            <div class="message-footer">
+                                Expected resolution: 30-45 minutes. We apologize for the inconvenience.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="message-channels">
+                        <div class="channel-tag">📱 Mobile App</div>
+                        <div class="channel-tag">💻 Web Portal</div>
+                        <div class="channel-tag">🔔 Push Notification</div>
+                    </div>
+                `;
+            }
+            
+            messagePreview.innerHTML = message;
+        }
+
+        function displayLaunchDarkly(data) {
+            const html = `
+                ${data.actions.map((flag, index) => `
+                    <div class="flag-card">
+                        <div class="flag-info">
+                            <div class="flag-key">${flag}</div>
+                            <div class="flag-desc">Ready to toggle - Click to enable</div>
+                        </div>
+                        <div class="toggle" id="toggle-${index}" onclick="attemptToggle(${index})"></div>
+                    </div>
+                `).join('')}
+            `;
+
+            document.getElementById('ld-flags').innerHTML = html;
+            document.getElementById('approval-card').style.display = 'block';
+            document.getElementById('ld-preview').style.display = 'block';
+            
+            // Update the approval card's ready-box
+            const readyBox = document.getElementById('ready-box');
+            readyBox.innerHTML = `
+                <div class="ready-icon">✅</div>
+                <div class="ready-title">Execution Ready</div>
+                <div class="ready-text">
+                    Awaiting ${data.approval.path} approval.<br>
+                    Once approved, flags can be toggled in LaunchDarkly.
+                </div>
+                <button class="btn btn-primary" onclick="approveExecution()" style="margin-top: 20px;">
+                    ✓ Approve & Enable Toggles
+                </button>
+            `;
+            
+            window.currentApprovalData = data;
+            window.isApproved = false;
+            window.flagsToggled = false;
+        }
+
+        function attemptToggle(index) {
+            if (!window.isApproved) {
+                alert('⚠️ Approval required first!\n\nClick "Approve & Enable Toggles" button to unlock flag controls.');
+                return;
+            }
+            
+            const toggle = document.getElementById(`toggle-${index}`);
+            const flagCard = toggle.closest('.flag-card');
+            const flagDesc = flagCard.querySelector('.flag-desc');
+            
+            // Toggle on/off
+            toggle.classList.toggle('on');
+            
+            if (toggle.classList.contains('on')) {
+                flagDesc.textContent = 'Enabled in LaunchDarkly';
+                flagCard.style.background = 'linear-gradient(135deg, #D1FAE5, #ECFDF5)';
+                flagCard.style.borderColor = '#0CAF60';
+            } else {
+                flagDesc.textContent = 'Disabled in LaunchDarkly';
+                flagCard.style.background = '';
+                flagCard.style.borderColor = '';
+            }
+            
+            // Check if all toggles are on
+            const allToggles = document.querySelectorAll('.toggle');
+            const allOn = Array.from(allToggles).every(t => t.classList.contains('on'));
+            const anyOn = Array.from(allToggles).some(t => t.classList.contains('on'));
+            
+            if (allOn && !window.flagsToggled) {
+                window.flagsToggled = true;
+                // Update LD header to Execution Complete
+                const ldStatus = document.getElementById('ld-status-text');
+                if (ldStatus) { ldStatus.textContent = '✅ Execution Complete — All Flags Live'; ldStatus.style.opacity = '1'; ldStatus.style.color = '#6EE7B7'; }
+                showExecutionComplete();
+            } else if (anyOn && window.flagsToggled) {
+                // Update ready box to show rollback available
+                updateReadyBoxWithRollback();
+            }
+        }
+
+        function approveExecution() {
+            window.isApproved = true;
+            
+            const readyBox = document.getElementById('ready-box');
+            readyBox.innerHTML = `
+                <div class="ready-icon">👤</div>
+                <div class="ready-title" style="color: #059669;">Approved!</div>
+                <div class="ready-text" style="color: #047857;">
+                    You can now toggle the feature flags below.<br>
+                    Click each toggle to enable the flags in LaunchDarkly.
+                </div>
+            `;
+            readyBox.style.background = 'linear-gradient(135deg, #D1FAE5, #A7F3D0)';
+            readyBox.style.borderColor = '#10B981';
+            
+            // Update LD header
+            const ldStatus = document.getElementById('ld-status-text');
+            if (ldStatus) { ldStatus.textContent = 'Approved — Toggle Flags to Execute'; ldStatus.style.opacity = '1'; }
+            
+            // Update flow diagram
+            updateFlowStep(3, 'completed');
+            updateFlowStep(4, 'active');
+            
+            alert('✓ Approval Granted!\n\nYou can now toggle the feature flags.');
+        }
+
+        function showExecutionComplete() {
+            const isMaintenance = window.currentApprovalData.classification.type === 'Scheduled Maintenance';
+            
+            let additionalContent = '';
+            if (isMaintenance) {
+                additionalContent = `
+                    <div style="margin-top: 20px; padding: 16px; background: linear-gradient(135deg, #FEF3C7, #FDE68A); border: 2px solid #F59E0B; border-radius: 8px;">
+                        <div style="font-weight: 700; font-size: 0.875rem; color: #92400E; margin-bottom: 8px;">
+                            ⏰ Scheduled Auto-Rollback
+                        </div>
+                        <div style="font-size: 0.8rem; color: #78350F; margin-bottom: 12px;">
+                            Flags will automatically toggle OFF at maintenance end time:
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: white; padding: 12px; border-radius: 6px;">
+                            <div>
+                                <div style="font-size: 0.7rem; color: #586069; margin-bottom: 4px;">SCHEDULED END</div>
+                                <div style="font-weight: 700; font-size: 0.875rem; color: #24292E;">Sunday, 06:00 SGT</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.7rem; color: #586069; margin-bottom: 4px;">AUTO-ROLLBACK IN</div>
+                                <div style="font-weight: 700; font-size: 0.875rem; color: #F59E0B;" id="rollback-timer">35h 30m</div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 12px; font-size: 0.75rem; color: #78350F;">
+                            ✓ Maintenance mode will be disabled automatically<br>
+                            ✓ All services will resume normal operation<br>
+                            ✓ No manual intervention required
+                        </div>
+                    </div>
+                `;
+            }
+            
+            const executionBox = document.getElementById('execution-box');
+            executionBox.className = 'ready-box';
+            document.getElementById('execution-complete-card').style.display = 'block';
+            executionBox.innerHTML = `
+                <div class="ready-icon">🎉</div>
+                <div class="ready-title" style="color: #047857;">Execution Complete!</div>
+                <div class="ready-text" style="color: #065F46;">
+                    All ${window.currentApprovalData.actions.length} feature flags have been toggled ON in LaunchDarkly.<br>
+                    Changes are now live across all channels (App, Portal, Kiosk).
+                </div>
+                <div style="margin-top: 16px; padding: 16px; background: white; border-radius: 8px;">
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; text-align: center;">
+                        <div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: #0F766E;">${window.currentApprovalData.actions.length}</div>
+                            <div style="font-size: 0.75rem; color: #586069;">Flags Toggled</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: #0F766E;">3</div>
+                            <div style="font-size: 0.75rem; color: #586069;">Channels Updated</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: #0F766E;">~8s</div>
+                            <div style="font-size: 0.75rem; color: #586069;">Total Time</div>
+                        </div>
+                    </div>
+                </div>
+                ${additionalContent}
+                <button class="btn btn-primary" onclick="rollbackAllFlags()" style="margin-top: 20px; background: #DC2626; border: none;">
+                    ↩️ Rollback All Flags (Turn Everything OFF)
+                </button>
+                <div style="margin-top: 12px; font-size: 0.75rem; color: #586069; text-align: center;">
+                    You can also toggle individual flags on/off above
+                </div>
+            `;
+            
+            // Complete flow diagram
+            updateFlowStep(4, 'completed');
+            updateFlowStep(5, 'completed');
+
+            // Show Track 3 & 4
+            showTrack3And4(window.currentApprovalData);
+            
+            // Start countdown timer for maintenance if applicable
+            if (isMaintenance) {
+                startRollbackCountdown();
+            }
+        }
+        
+        function updateReadyBoxWithRollback() {
+            const allToggles = document.querySelectorAll('.toggle');
+            const enabledCount = Array.from(allToggles).filter(t => t.classList.contains('on')).length;
+            const totalCount = allToggles.length;
+            
+            const executionBox = document.getElementById('execution-box');
+            executionBox.innerHTML = `
+                <div class="ready-icon">⚙️</div>
+                <div class="ready-title" style="color: #0F766E;">Flags Partially Active</div>
+                <div class="ready-text" style="color: #586069;">
+                    ${enabledCount} of ${totalCount} flags currently enabled.<br>
+                    Toggle individual flags above or use rollback to disable all at once.
+                </div>
+                <div style="margin-top: 16px; padding: 16px; background: white; border-radius: 8px;">
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; text-align: center;">
+                        <div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: #0CAF60;">${enabledCount}</div>
+                            <div style="font-size: 0.75rem; color: #586069;">Enabled</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: #959DA5;">${totalCount - enabledCount}</div>
+                            <div style="font-size: 0.75rem; color: #586069;">Disabled</div>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="rollbackAllFlags()" style="margin-top: 20px; background: #DC2626; border: none;">
+                    ↩️ Rollback All Flags (Turn Everything OFF)
+                </button>
+            `;
+        }
+        
+        function rollbackAllFlags() {
+            if (!confirm('⚠️ Rollback Confirmation\n\nThis will turn OFF all feature flags and return to normal operation.\n\nProceed with rollback?')) {
+                return;
+            }
+            
+            // Turn off all toggles
+            const allToggles = document.querySelectorAll('.toggle');
+            allToggles.forEach((toggle, index) => {
+                if (toggle.classList.contains('on')) {
+                    toggle.classList.remove('on');
+                    const flagCard = toggle.closest('.flag-card');
+                    const flagDesc = flagCard.querySelector('.flag-desc');
+                    flagDesc.textContent = 'Disabled in LaunchDarkly';
+                    flagCard.style.background = '';
+                    flagCard.style.borderColor = '';
+                }
+            });
+            
+            // Update ready box
+            const executionBox = document.getElementById('execution-box');
+            executionBox.innerHTML = `
+                <div class="ready-icon">↩️</div>
+                <div class="ready-title" style="color: #047857;">Rollback Complete!</div>
+                <div class="ready-text" style="color: #065F46;">
+                    All ${window.currentApprovalData.actions.length} feature flags have been turned OFF.<br>
+                    System has returned to normal operation.
+                </div>
+                <div style="margin-top: 16px; padding: 16px; background: white; border-radius: 8px;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #0CAF60; margin-bottom: 8px;">✓</div>
+                        <div style="font-size: 0.875rem; color: #586069;">
+                            All channels back to normal<br>
+                            App • Portal • Kiosk
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 16px; font-size: 0.75rem; color: #586069; text-align: center;">
+                    You can toggle individual flags back ON if needed
+                </div>
+            `;
+            
+            window.flagsToggled = false;
+
+            // Reset Track 4 banners to normal
+            ['app', 'web', 'kiosk'].forEach(ch => {
+                const el = document.getElementById(`banner-${ch}`);
+                if (el) {
+                    el.className = 'disruption-banner normal';
+                    el.querySelector('.disruption-banner-icon').textContent = '🟢';
+                    document.getElementById(`banner-${ch}-text`).textContent = 'All services operational';
+                }
+            });
+
+            // Update Track 3 to show recovery state
+            const t3Action = document.getElementById('t3-action');
+            if (t3Action) t3Action.textContent = '↩ Bundle rolled back — all flags OFF. System returned to normal operation.';
+            const slackIntro = document.getElementById('slack-intro-text');
+            if (slackIntro) slackIntro.textContent = `✅ Rollback complete — all flags disabled. System operational.`;
+            
+            alert('✓ Rollback Successful!\n\nAll flags have been disabled. System returned to normal operation.');
+        }
+        
+        // ── Track 3 & 4 helpers ──
+
+        function switchNotifTab(tab, el) {
+            document.querySelectorAll('.notif-tab').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById('notif-teams').style.display = tab === 'teams' ? 'block' : 'none';
+            document.getElementById('notif-slack').style.display = tab === 'slack' ? 'block' : 'none';
+        }
+
+        function generateEventId(data) {
+            const service = data.classification.affectedSystems.split(',')[0].trim().toLowerCase().replace(/\s+/g, '_');
+            const now = new Date();
+            const dateStr = now.toISOString().slice(0,10).replace(/-/g,'');
+            return `SE_${service}_${dateStr}_001`;
+        }
+
+        function getPIC(data) {
+            const sev = data.classification.severity;
+            if (sev === 'CRITICAL') return 'Product Lead + Engineering Lead + On-Call Engineer';
+            if (sev === 'MAJOR') return 'Engineering Lead + Product Manager';
+            return 'On-Call Engineer';
+        }
+
+        function getBundleName(data) {
+            const first = data.actions[0] || '';
+            return first.toUpperCase().replace(/_/g, '_').slice(0, 40);
+        }
+
+        function getWindow(data) {
+            if (data.classification.type === 'Scheduled Maintenance') return 'Sun 28 Apr, 02:00–06:00 SGT';
+            return 'Immediate – ongoing until resolved';
+        }
+
+        function getBannerState(severity) {
+            if (severity === 'CRITICAL') return { cls: 'outage', icon: '🔴', text: 'Service is currently unavailable. We are working to restore it.' };
+            if (severity === 'MAJOR') return { cls: 'degraded', icon: '🟡', text: 'Some services are experiencing disruption. Alternatives available.' };
+            return { cls: 'normal', icon: '🟢', text: 'All services operational.' };
+        }
+
+        function showTrack3And4(data) {
+            const eventId = generateEventId(data);
+            const pic = getPIC(data);
+            const bundle = getBundleName(data);
+            const window_ = getWindow(data);
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-SG', { hour: '2-digit', minute: '2-digit' }) + ' SGT';
+            const sev = data.classification.severity;
+            const type = data.classification.type;
+
+            // ── Track 3 ──
+            document.getElementById('track3-section').style.display = 'block';
+            document.getElementById('teams-time').textContent = 'Today at ' + timeStr;
+            document.getElementById('slack-time').textContent = timeStr;
+
+            // Teams fields
+            document.getElementById('t3-event-id').textContent = eventId;
+            document.getElementById('t3-type').textContent = type;
+            document.getElementById('t3-severity').textContent = sev;
+            document.getElementById('t3-bundle').textContent = bundle;
+            document.getElementById('t3-window').textContent = window_;
+            document.getElementById('t3-pic').textContent = pic;
+            document.getElementById('t3-action').textContent = 'Bundle activated and flags enabled in LaunchDarkly';
+
+            // Slack fields
+            const slackColors = { CRITICAL: '#DC2626', MAJOR: '#D97706', MINOR: '#2563EB' };
+            const slackBadgeBg = { CRITICAL: '#FEE2E2', MAJOR: '#FEF3C7', MINOR: '#DBEAFE' };
+            document.getElementById('slack-intro-text').textContent = `🚨 Service event detected and bundle activated — ${eventId}`;
+            document.getElementById('slack-attach-title').textContent = `${sev}: ${type}`;
+            document.getElementById('slack-event-id').textContent = eventId;
+            const badge = document.getElementById('slack-severity-badge');
+            badge.textContent = sev;
+            badge.style.background = slackBadgeBg[sev] || '#F3F4F6';
+            badge.style.color = slackColors[sev] || '#374151';
+            document.getElementById('slack-bundle').textContent = bundle;
+            document.getElementById('slack-window').textContent = window_;
+            document.getElementById('slack-pic').textContent = pic;
+            document.getElementById('slack-time').textContent = timeStr;
+            document.getElementById('slack-attachment').style.borderColor = slackColors[sev] || '#6B7280';
+
+            // Traceability
+            document.getElementById('conf-event-id').textContent = eventId;
+            const snowTicket = 'CHG-' + Math.floor(100000 + Math.random() * 900000);
+            const snowParams = new URLSearchParams({
+                ticket: snowTicket,
+                eventId,
+                severity: data.classification.severity,
+                type: data.classification.type,
+                systems: data.classification.affectedSystems,
+                impact: data.classification.impact,
+                bundle,
+                pic,
+                sop: data.sop
+            });
+            const snowUrl = `servicenow-ticket.html?${snowParams.toString()}`;
+            const snowLink = document.getElementById('snow-ticket-link');
+            snowLink.textContent = snowTicket;
+            snowLink.href = snowUrl;
+
+            document.getElementById('audit-event-id').textContent = eventId;
+
+            // Wire Teams "View Record" button
+            const teamsViewBtn = document.querySelector('.teams-btn-ghost');
+            if (teamsViewBtn) {
+                teamsViewBtn.style.cursor = 'pointer';
+                teamsViewBtn.onclick = () => window.open(snowUrl, '_blank');
+            }
+
+            // ── Track 4 ──
+            document.getElementById('track4-section').style.display = 'block';
+            const bannerState = getBannerState(sev);
+            ['app', 'web', 'kiosk'].forEach(ch => {
+                const el = document.getElementById(`banner-${ch}`);
+                el.className = `disruption-banner ${bannerState.cls}`;
+                el.querySelector('.disruption-banner-icon').textContent = bannerState.icon;
+                document.getElementById(`banner-${ch}-text`).textContent = bannerState.text;
+            });
+
+            // Scroll to Track 3
+            setTimeout(() => {
+                document.getElementById('track3-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 400);
+        }
+
+        function startRollbackCountdown() {
+            // Simulate countdown (in real system, this would be based on actual scheduled time)
+            let hours = 35;
+            let minutes = 30;
+            
+            const timerElement = document.getElementById('rollback-timer');
+            
+            setInterval(() => {
+                minutes--;
+                if (minutes < 0) {
+                    minutes = 59;
+                    hours--;
+                }
+                
+                if (hours < 0) {
+                    timerElement.textContent = 'Auto-rollback in progress...';
+                    timerElement.style.color = '#0CAF60';
+                    return;
+                }
+                
+                timerElement.textContent = `${hours}h ${minutes}m`;
+            }, 60000); // Update every minute (for demo purposes, you could speed this up)
+        }
+    </script>
+    
+    <!-- Track 3: Operational Response & Traceability -->
+    <div class="container">
+        <div class="track-section" id="track3-section" style="display:none;">
+            <span class="track-label track3-label">Track 3</span>
+            <div class="track-title">📣 Operational Response & Traceability</div>
+            <div class="track-subtitle">PIC notified automatically — preview how the message lands in Teams and Slack</div>
+
+            <div class="notif-tabs">
+                <button class="notif-tab active" onclick="switchNotifTab('teams', this)">💬 Microsoft Teams</button>
+                <button class="notif-tab" onclick="switchNotifTab('slack', this)">🟣 Slack</button>
+            </div>
+
+            <!-- Teams Preview -->
+            <div id="notif-teams">
+                <div class="teams-card">
+                    <div class="teams-header">
+                        <span>💬</span>
+                        <span>Microsoft Teams — #service-incidents</span>
+                    </div>
+                    <div class="teams-body">
+                        <div class="teams-sender">
+                            <div class="teams-avatar">SC</div>
+                            <div>
+                                <div class="teams-sender-name">Service Control Bot</div>
+                                <div class="teams-time" id="teams-time"></div>
+                            </div>
+                        </div>
+                        <div class="teams-message-body" id="teams-message-body">
+                            <div class="teams-field"><span class="teams-field-label">🔴 Service Event:</span><span class="teams-field-value" id="t3-event-id">—</span></div>
+                            <div class="teams-field"><span class="teams-field-label">📌 Type:</span><span class="teams-field-value" id="t3-type">—</span></div>
+                            <div class="teams-field"><span class="teams-field-label">⚠️ Severity:</span><span class="teams-field-value" id="t3-severity">—</span></div>
+                            <div class="teams-field"><span class="teams-field-label">🎯 Bundle:</span><span class="teams-field-value" id="t3-bundle">—</span></div>
+                            <div class="teams-field"><span class="teams-field-label">🕐 Window:</span><span class="teams-field-value" id="t3-window">—</span></div>
+                            <div class="teams-field"><span class="teams-field-label">👤 PIC:</span><span class="teams-field-value" id="t3-pic">—</span></div>
+                            <div class="teams-field"><span class="teams-field-label">📋 Action:</span><span class="teams-field-value" id="t3-action">—</span></div>
+                        </div>
+                        <div class="teams-actions">
+                            <div class="teams-btn teams-btn-primary">✓ Acknowledge</div>
+                            <div class="teams-btn teams-btn-danger">↩ Rollback</div>
+                            <div class="teams-btn teams-btn-ghost">📋 View Record</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slack Preview -->
+            <div id="notif-slack" style="display:none;">
+                <div class="slack-card">
+                    <div class="slack-header">
+                        <span>🟣</span>
+                        <span>Slack — #service-events</span>
+                    </div>
+                    <div class="slack-body">
+                        <div class="slack-channel-name"># service-events</div>
+                        <div class="slack-message">
+                            <div class="slack-avatar">SC</div>
+                            <div class="slack-content">
+                                <div class="slack-sender-row">
+                                    <span class="slack-sender">Service Control Bot</span>
+                                    <span class="slack-ts" id="slack-time"></span>
+                                </div>
+                                <div class="slack-text" id="slack-intro-text">—</div>
+                                <div class="slack-attachment" id="slack-attachment" style="border-color: #DC2626;">
+                                    <div class="slack-attachment-title" id="slack-attach-title">—</div>
+                                    <div class="slack-attachment-field">Event ID: <strong id="slack-event-id">—</strong></div>
+                                    <div class="slack-attachment-field">Severity: <span class="slack-badge" id="slack-severity-badge">—</span></div>
+                                    <div class="slack-attachment-field">Bundle: <strong id="slack-bundle">—</strong></div>
+                                    <div class="slack-attachment-field">Window: <span id="slack-window">—</span></div>
+                                    <div class="slack-attachment-field">PIC: <span id="slack-pic">—</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Traceability row -->
+            <div style="margin-top: 20px; display: grid; grid-template-columns: repeat(3,1fr); gap: 12px;">
+                <div style="background:#F8F8FF; border:1.5px solid #C4B5FD; border-radius:8px; padding:14px;">
+                    <div style="font-size:0.75rem; font-weight:700; color:#5B21B6; margin-bottom:6px;">📄 Confluence</div>
+                    <div style="font-size:0.75rem; color:#444D56;">Incident page auto-created<br><span id="conf-event-id" style="font-weight:600; color:#5B21B6;">—</span></div>
+                </div>
+                <div style="background:#F0FDF4; border:1.5px solid #86EFAC; border-radius:8px; padding:14px;">
+                    <div style="font-size:0.75rem; font-weight:700; color:#166534; margin-bottom:6px;">🎫 ServiceNow</div>
+                    <div style="font-size:0.75rem; color:#444D56;">Change ticket raised<br><a id="snow-ticket-link" href="#" target="_blank" style="font-weight:600; color:#166534; text-decoration:underline;">—</a></div>
+                </div>
+                <div style="background:#FFF7ED; border:1.5px solid #FED7AA; border-radius:8px; padding:14px;">
+                    <div style="font-size:0.75rem; font-weight:700; color:#C2410C; margin-bottom:6px;">🔗 Audit Trail</div>
+                    <div style="font-size:0.75rem; color:#444D56;">All records linked to<br><span id="audit-event-id" style="font-weight:600; color:#C2410C;">—</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Track 4: Real-Time Customer Visibility -->
+        <div class="track-section" id="track4-section" style="display:none;">
+            <span class="track-label track4-label">Track 4</span>
+            <div class="track-title">📱 Real-Time Customer Service Visibility</div>
+            <div class="track-subtitle">Customer banners update automatically across all channels based on severity</div>
+
+            <div class="banner-grid" id="banner-grid">
+                <div class="channel-frame">
+                    <div class="channel-frame-label">📱 Mobile App</div>
+                    <div class="channel-screen">
+                        <div class="channel-topbar"></div>
+                        <div id="banner-app" class="disruption-banner normal">
+                            <div class="disruption-banner-icon">🟢</div>
+                            <div class="disruption-banner-text" id="banner-app-text">All services operational</div>
+                        </div>
+                        <div class="channel-body-line" style="width:90%"></div>
+                        <div class="channel-body-line" style="width:70%"></div>
+                        <div class="channel-body-line" style="width:80%"></div>
+                    </div>
+                </div>
+                <div class="channel-frame">
+                    <div class="channel-frame-label">💻 Web Portal</div>
+                    <div class="channel-screen">
+                        <div class="channel-topbar"></div>
+                        <div id="banner-web" class="disruption-banner normal">
+                            <div class="disruption-banner-icon">🟢</div>
+                            <div class="disruption-banner-text" id="banner-web-text">All services operational</div>
+                        </div>
+                        <div class="channel-body-line" style="width:85%"></div>
+                        <div class="channel-body-line" style="width:65%"></div>
+                        <div class="channel-body-line" style="width:75%"></div>
+                    </div>
+                </div>
+                <div class="channel-frame">
+                    <div class="channel-frame-label">🏪 Kiosk</div>
+                    <div class="channel-screen">
+                        <div class="channel-topbar"></div>
+                        <div id="banner-kiosk" class="disruption-banner normal">
+                            <div class="disruption-banner-icon">🟢</div>
+                            <div class="disruption-banner-text" id="banner-kiosk-text">All services operational</div>
+                        </div>
+                        <div class="channel-body-line" style="width:80%"></div>
+                        <div class="channel-body-line" style="width:60%"></div>
+                        <div class="channel-body-line" style="width:70%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="status-legend">
+                <div class="legend-item"><div class="legend-dot" style="background:#10B981;"></div>Normal — No disruption</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#F59E0B;"></div>Degraded — Partial service message</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#EF4444;"></div>Outage — Full outage banner</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#3B82F6;"></div>Recovery — Service restored</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Credit -->
+    <div class="footer-credit">
+        <div class="footer-credit-text">
+            Demo created by <span class="footer-credit-name">Eunice Tan</span>
+        </div>
+        <div class="footer-credit-text" style="margin-top: 8px; font-size: 0.75rem;">
+            Project Godiva - Phase 1 MVP © 2026
+        </div>
+    </div>
+</body>
+</html>

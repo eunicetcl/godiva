@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ServiceNow — Change Request</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --snow-green: #1B5E3B;
+            --snow-green-light: #2E7D32;
+            --snow-nav: #1B5E3B;
+            --snow-header: #293E40;
+            --snow-accent: #81C784;
+            --snow-border: #D1D5DB;
+            --snow-bg: #F3F4F6;
+            --snow-white: #FFFFFF;
+            --snow-text: #111827;
+            --snow-muted: #6B7280;
+            --snow-critical: #DC2626;
+            --snow-major: #D97706;
+            --snow-minor: #2563EB;
+            --snow-success: #059669;
+        }
+
+        body {
+            font-family: 'Source Sans 3', -apple-system, sans-serif;
+            background: var(--snow-bg);
+            color: var(--snow-text);
+            font-size: 13px;
+        }
+
+        /* Top nav */
+        .snow-topnav {
+            background: var(--snow-nav);
+            height: 40px;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            gap: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .snow-logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            font-weight: 700;
+            font-size: 14px;
+            letter-spacing: 0.02em;
+        }
+
+        .snow-logo-icon {
+            width: 24px;
+            height: 24px;
+            background: var(--snow-accent);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: var(--snow-green);
+            font-weight: 900;
+        }
+
+        .snow-nav-links {
+            display: flex;
+            gap: 2px;
+            margin-left: 12px;
+        }
+
+        .snow-nav-link {
+            color: rgba(255,255,255,0.75);
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .snow-nav-link:hover, .snow-nav-link.active {
+            background: rgba(255,255,255,0.15);
+            color: white;
+        }
+
+        .snow-nav-right {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: rgba(255,255,255,0.75);
+            font-size: 12px;
+        }
+
+        .snow-avatar {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: var(--snow-accent);
+            color: var(--snow-green);
+            font-weight: 700;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Sub nav / breadcrumb */
+        .snow-breadcrumb {
+            background: var(--snow-header);
+            padding: 8px 20px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.6);
+        }
+
+        .snow-breadcrumb span { color: rgba(255,255,255,0.9); }
+        .snow-breadcrumb .sep { color: rgba(255,255,255,0.3); }
+
+        /* Action bar */
+        .snow-actionbar {
+            background: white;
+            border-bottom: 1px solid var(--snow-border);
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .snow-btn {
+            padding: 5px 14px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: default;
+            border: 1px solid transparent;
+        }
+
+        .snow-btn-primary { background: var(--snow-green-light); color: white; }
+        .snow-btn-secondary { background: white; color: var(--snow-text); border-color: var(--snow-border); }
+        .snow-btn-danger { background: #DC2626; color: white; }
+
+        .snow-ticket-number {
+            margin-left: auto;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--snow-green-light);
+            background: #F0FDF4;
+            padding: 4px 12px;
+            border-radius: 4px;
+            border: 1px solid #86EFAC;
+        }
+
+        /* Main layout */
+        .snow-main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 16px;
+        }
+
+        /* Form sections */
+        .snow-form-section {
+            background: white;
+            border: 1px solid var(--snow-border);
+            border-radius: 4px;
+            margin-bottom: 12px;
+            overflow: hidden;
+        }
+
+        .snow-section-header {
+            background: #F9FAFB;
+            border-bottom: 1px solid var(--snow-border);
+            padding: 8px 14px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--snow-muted);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .snow-form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+        }
+
+        .snow-field {
+            padding: 10px 14px;
+            border-bottom: 1px solid #F3F4F6;
+            border-right: 1px solid #F3F4F6;
+        }
+
+        .snow-field:nth-child(even) { border-right: none; }
+        .snow-field.full-width { grid-column: 1 / -1; border-right: none; }
+
+        .snow-field-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--snow-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+        }
+
+        .snow-field-value {
+            font-size: 13px;
+            color: var(--snow-text);
+            font-weight: 500;
+        }
+
+        .snow-field-value.link {
+            color: var(--snow-green-light);
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        /* State badge */
+        .snow-state {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .snow-state.implement { background: #DBEAFE; color: #1D4ED8; }
+        .snow-state.review { background: #FEF3C7; color: #92400E; }
+        .snow-state.closed { background: #D1FAE5; color: #065F46; }
+        .snow-state.open { background: #FEE2E2; color: #991B1B; }
+
+        .snow-priority {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .snow-priority.critical { color: var(--snow-critical); }
+        .snow-priority.major { color: var(--snow-major); }
+        .snow-priority.minor { color: var(--snow-minor); }
+
+        /* Activity / work notes */
+        .snow-activity {
+            background: white;
+            border: 1px solid var(--snow-border);
+            border-radius: 4px;
+        }
+
+        .snow-activity-item {
+            padding: 12px 14px;
+            border-bottom: 1px solid #F3F4F6;
+            display: flex;
+            gap: 10px;
+        }
+
+        .snow-activity-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .snow-activity-content { flex: 1; }
+
+        .snow-activity-header {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            margin-bottom: 4px;
+        }
+
+        .snow-activity-who { font-weight: 700; font-size: 12px; }
+        .snow-activity-when { font-size: 11px; color: var(--snow-muted); }
+        .snow-activity-action { font-size: 11px; color: var(--snow-muted); }
+
+        .snow-activity-text {
+            font-size: 12px;
+            color: #374151;
+            line-height: 1.5;
+            background: #F9FAFB;
+            padding: 8px 10px;
+            border-radius: 4px;
+            border-left: 3px solid var(--snow-border);
+        }
+
+        /* Right sidebar */
+        .snow-sidebar-section {
+            background: white;
+            border: 1px solid var(--snow-border);
+            border-radius: 4px;
+            margin-bottom: 12px;
+            overflow: hidden;
+        }
+
+        .snow-sidebar-field {
+            padding: 9px 14px;
+            border-bottom: 1px solid #F3F4F6;
+        }
+
+        .snow-sidebar-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--snow-muted);
+            margin-bottom: 3px;
+        }
+
+        .snow-sidebar-value {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--snow-text);
+        }
+
+        /* Related records */
+        .snow-related-item {
+            padding: 8px 14px;
+            border-bottom: 1px solid #F3F4F6;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .snow-related-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            flex-shrink: 0;
+        }
+
+        .snow-related-link { color: var(--snow-green-light); font-weight: 600; cursor: pointer; }
+        .snow-related-desc { color: var(--snow-muted); font-size: 11px; }
+
+        /* Demo banner */
+        .demo-notice {
+            background: #FEF3C7;
+            border: 1px solid #FCD34D;
+            border-radius: 4px;
+            padding: 8px 14px;
+            font-size: 11px;
+            color: #78350F;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        @media (max-width: 900px) {
+            .snow-main { grid-template-columns: 1fr; }
+            .snow-form-grid { grid-template-columns: 1fr; }
+            .snow-field { border-right: none; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Top Nav -->
+<div class="snow-topnav">
+    <div class="snow-logo">
+        <div class="snow-logo-icon">SN</div>
+        ServiceNow
+    </div>
+    <div class="snow-nav-links">
+        <div class="snow-nav-link">Home</div>
+        <div class="snow-nav-link active">Change</div>
+        <div class="snow-nav-link">Incidents</div>
+        <div class="snow-nav-link">CMDB</div>
+        <div class="snow-nav-link">Reports</div>
+    </div>
+    <div class="snow-nav-right">
+        <span>🔔</span>
+        <span>⚙️</span>
+        <div class="snow-avatar">SC</div>
+    </div>
+</div>
+
+<!-- Breadcrumb -->
+<div class="snow-breadcrumb">
+    Change Management
+    <span class="sep">›</span>
+    All Changes
+    <span class="sep">›</span>
+    <span id="bc-ticket">CHG-000000</span>
+</div>
+
+<!-- Action Bar -->
+<div class="snow-actionbar">
+    <div class="snow-btn snow-btn-primary">Save</div>
+    <div class="snow-btn snow-btn-secondary">Update</div>
+    <div class="snow-btn snow-btn-secondary">↩ Rollback</div>
+    <div class="snow-btn snow-btn-danger">Close Task</div>
+    <div class="snow-ticket-number" id="ab-ticket">CHG-000000</div>
+</div>
+
+<!-- Main content -->
+<div class="snow-main">
+    <div>
+        <div class="demo-notice">
+            🎭 Demo Mode — This is a simulated ServiceNow ticket generated by Project Godiva's Service Control Platform
+        </div>
+
+        <!-- Header info -->
+        <div class="snow-form-section">
+            <div class="snow-section-header">📋 Change Request Details</div>
+            <div class="snow-form-grid">
+                <div class="snow-field">
+                    <div class="snow-field-label">Number</div>
+                    <div class="snow-field-value" id="f-number">CHG-000000</div>
+                </div>
+                <div class="snow-field">
+                    <div class="snow-field-label">State</div>
+                    <div class="snow-field-value">
+                        <span class="snow-state implement" id="f-state">Implement</span>
+                    </div>
+                </div>
+                <div class="snow-field">
+                    <div class="snow-field-label">Category</div>
+                    <div class="snow-field-value">Service Event Automation</div>
+                </div>
+                <div class="snow-field">
+                    <div class="snow-field-label">Priority</div>
+                    <div class="snow-field-value">
+                        <span class="snow-priority critical" id="f-priority">🔴 1 - Critical</span>
+                    </div>
+                </div>
+                <div class="snow-field full-width">
+                    <div class="snow-field-label">Short Description</div>
+                    <div class="snow-field-value" id="f-short-desc">—</div>
+                </div>
+                <div class="snow-field full-width">
+                    <div class="snow-field-label">Description</div>
+                    <div class="snow-field-value" id="f-desc" style="line-height:1.6; color: #374151;">—</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Planning -->
+        <div class="snow-form-section">
+            <div class="snow-section-header">🗓 Planning</div>
+            <div class="snow-form-grid">
+                <div class="snow-field">
+                    <div class="snow-field-label">Planned Start</div>
+                    <div class="snow-field-value" id="f-start">—</div>
+                </div>
+                <div class="snow-field">
+                    <div class="snow-field-label">Planned End</div>
+                    <div class="snow-field-value" id="f-end">—</div>
+                </div>
+                <div class="snow-field">
+                    <div class="snow-field-label">Assigned To</div>
+                    <div class="snow-field-value" id="f-pic">—</div>
+                </div>
+                <div class="snow-field">
+                    <div class="snow-field-label">Assignment Group</div>
+                    <div class="snow-field-value">Service Operations</div>
+                </div>
+                <div class="snow-field">
+                    <div class="snow-field-label">Service Event ID</div>
+                    <div class="snow-field-value link" id="f-event-id">—</div>
+                </div>
+                <div class="snow-field">
+                    <div class="snow-field-label">LaunchDarkly Bundle</div>
+                    <div class="snow-field-value" id="f-bundle">—</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Risk & Impact -->
+        <div class="snow-form-section">
+            <div class="snow-section-header">⚠️ Risk & Impact</div>
+            <div class="snow-form-grid">
+                <div class="snow-field">
+                    <div class="snow-field-label">Risk</div>
+                    <div class="snow-field-value" id="f-risk">High</div>
+                </div>
+                <div class="snow-field">
+                    <div class="snow-field-label">Impact</div>
+                    <div class="snow-field-value" id="f-impact-level">1 - High</div>
+                </div>
+                <div class="snow-field full-width">
+                    <div class="snow-field-label">Affected Systems</div>
+                    <div class="snow-field-value" id="f-systems">—</div>
+                </div>
+                <div class="snow-field full-width">
+                    <div class="snow-field-label">Customer Impact</div>
+                    <div class="snow-field-value" id="f-customer-impact">—</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity -->
+        <div class="snow-activity">
+            <div class="snow-section-header">💬 Activity Log</div>
+            <div class="snow-activity-item">
+                <div class="snow-activity-avatar" style="background:#DBEAFE; color:#1D4ED8;">SC</div>
+                <div class="snow-activity-content">
+                    <div class="snow-activity-header">
+                        <span class="snow-activity-who">Service Control Platform</span>
+                        <span class="snow-activity-action">created this ticket</span>
+                        <span class="snow-activity-when" id="act-time-1">—</span>
+                    </div>
+                    <div class="snow-activity-text" id="act-text-1">Ticket auto-generated by Project Godiva Service Control Platform upon bundle activation.</div>
+                </div>
+            </div>
+            <div class="snow-activity-item">
+                <div class="snow-activity-avatar" style="background:#D1FAE5; color:#065F46;">AI</div>
+                <div class="snow-activity-content">
+                    <div class="snow-activity-header">
+                        <span class="snow-activity-who">AI Classifier</span>
+                        <span class="snow-activity-action">classified event</span>
+                        <span class="snow-activity-when" id="act-time-2">—</span>
+                    </div>
+                    <div class="snow-activity-text" id="act-text-2">—</div>
+                </div>
+            </div>
+            <div class="snow-activity-item">
+                <div class="snow-activity-avatar" style="background:#FEF3C7; color:#92400E;">👤</div>
+                <div class="snow-activity-content">
+                    <div class="snow-activity-header">
+                        <span class="snow-activity-who" id="act-who-3">Approver</span>
+                        <span class="snow-activity-action">approved execution</span>
+                        <span class="snow-activity-when" id="act-time-3">—</span>
+                    </div>
+                    <div class="snow-activity-text">Approval granted. LaunchDarkly bundle activated. All feature flags toggled ON. Changes propagated across App, Web Portal, and Kiosk.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div>
+        <div class="snow-sidebar-section">
+            <div class="snow-section-header">📊 Ticket Info</div>
+            <div class="snow-sidebar-field">
+                <div class="snow-sidebar-label">Opened</div>
+                <div class="snow-sidebar-value" id="s-opened">—</div>
+            </div>
+            <div class="snow-sidebar-field">
+                <div class="snow-sidebar-label">Updated</div>
+                <div class="snow-sidebar-value" id="s-updated">—</div>
+            </div>
+            <div class="snow-sidebar-field">
+                <div class="snow-sidebar-label">Opened By</div>
+                <div class="snow-sidebar-value">Service Control Platform</div>
+            </div>
+            <div class="snow-sidebar-field">
+                <div class="snow-sidebar-label">Type</div>
+                <div class="snow-sidebar-value">Emergency Change</div>
+            </div>
+            <div class="snow-sidebar-field">
+                <div class="snow-sidebar-label">Environment</div>
+                <div class="snow-sidebar-value">Production — SG</div>
+            </div>
+        </div>
+
+        <div class="snow-sidebar-section">
+            <div class="snow-section-header">🔗 Related Records</div>
+            <div class="snow-related-item">
+                <div class="snow-related-icon" style="background:#EDE9FE; color:#5B21B6;">LD</div>
+                <div>
+                    <div class="snow-related-link" id="r-ld">LaunchDarkly Activation</div>
+                    <div class="snow-related-desc" id="r-ld-bundle">—</div>
+                </div>
+            </div>
+            <div class="snow-related-item">
+                <div class="snow-related-icon" style="background:#FEF3C7; color:#92400E;">CF</div>
+                <div>
+                    <div class="snow-related-link" id="r-conf">Confluence Incident Page</div>
+                    <div class="snow-related-desc" id="r-conf-id">—</div>
+                </div>
+            </div>
+            <div class="snow-related-item">
+                <div class="snow-related-icon" style="background:#D1FAE5; color:#065F46;">SL</div>
+                <div>
+                    <div class="snow-related-link">#service-events</div>
+                    <div class="snow-related-desc">Slack notification sent</div>
+                </div>
+            </div>
+            <div class="snow-related-item">
+                <div class="snow-related-icon" style="background:#DBEAFE; color:#1D4ED8;">TM</div>
+                <div>
+                    <div class="snow-related-link">Teams Alert</div>
+                    <div class="snow-related-desc">PIC notified</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="snow-sidebar-section">
+            <div class="snow-section-header">📍 Approval Chain</div>
+            <div class="snow-sidebar-field">
+                <div class="snow-sidebar-label">Required Approvers</div>
+                <div class="snow-sidebar-value" id="s-approvers">—</div>
+            </div>
+            <div class="snow-sidebar-field">
+                <div class="snow-sidebar-label">Approval Status</div>
+                <div class="snow-sidebar-value" style="color: #059669;">✅ Approved</div>
+            </div>
+            <div class="snow-sidebar-field">
+                <div class="snow-sidebar-label">SOP Reference</div>
+                <div class="snow-sidebar-value" id="s-sop">—</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Read params from URL query string
+    const params = new URLSearchParams(window.location.search);
+    const ticket   = params.get('ticket')   || 'CHG-' + Math.floor(100000 + Math.random() * 900000);
+    const eventId  = params.get('eventId')  || 'SE_paynow_20260428_001';
+    const severity = params.get('severity') || 'CRITICAL';
+    const type     = params.get('type')     || 'Payment Gateway Outage';
+    const systems  = params.get('systems')  || 'PayNow Gateway, Mobile App, Web Portal, Kiosk';
+    const impact   = params.get('impact')   || 'All PayNow bill payments failing';
+    const bundle   = params.get('bundle')   || 'DISABLE_PAYNOW_PAYMENT';
+    const pic      = params.get('pic')      || 'Product Lead + Engineering Lead';
+    const sop      = params.get('sop')      || 'SOP-PAY-001';
+
+    const now = new Date();
+    const fmtTime = (d) => d.toLocaleString('en-SG', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + ' SGT';
+    const minus = (d, m) => new Date(d.getTime() - m * 60000);
+
+    // Priority & state based on severity
+    const priorityMap = { CRITICAL: '🔴 1 - Critical', MAJOR: '🟠 2 - High', MINOR: '🟡 3 - Moderate' };
+    const riskMap     = { CRITICAL: 'High', MAJOR: 'Medium', MINOR: 'Low' };
+    const impactMap   = { CRITICAL: '1 - High', MAJOR: '2 - Medium', MINOR: '3 - Low' };
+
+    // Fill all fields
+    ['bc-ticket','ab-ticket','f-number'].forEach(id => document.getElementById(id).textContent = ticket);
+
+    document.getElementById('f-short-desc').textContent = `[${severity}] ${type} — ${eventId}`;
+    document.getElementById('f-desc').textContent =
+        `Service event ${eventId} detected and classified as ${severity}. ` +
+        `Type: ${type}. Affected systems: ${systems}. ` +
+        `LaunchDarkly bundle ${bundle} activated after approval. ` +
+        `All feature flags toggled ON and propagated across App, Web Portal, and Kiosk channels.`;
+
+    document.getElementById('f-start').textContent = fmtTime(minus(now, 10));
+    document.getElementById('f-end').textContent   = 'Until service restored';
+    document.getElementById('f-pic').textContent   = pic;
+    document.getElementById('f-event-id').textContent  = eventId;
+    document.getElementById('f-bundle').textContent    = bundle;
+    document.getElementById('f-priority').textContent  = priorityMap[severity] || priorityMap.MAJOR;
+    document.getElementById('f-risk').textContent      = riskMap[severity]     || 'Medium';
+    document.getElementById('f-impact-level').textContent = impactMap[severity] || '2 - Medium';
+    document.getElementById('f-systems').textContent  = systems;
+    document.getElementById('f-customer-impact').textContent = impact;
+
+    document.getElementById('s-opened').textContent   = fmtTime(minus(now, 12));
+    document.getElementById('s-updated').textContent  = fmtTime(now);
+    document.getElementById('s-approvers').textContent = pic;
+    document.getElementById('s-sop').textContent      = sop;
+
+    document.getElementById('act-time-1').textContent = fmtTime(minus(now, 12));
+    document.getElementById('act-time-2').textContent = fmtTime(minus(now, 10));
+    document.getElementById('act-time-3').textContent = fmtTime(minus(now, 5));
+    document.getElementById('act-who-3').textContent  = pic.split('+')[0].trim();
+    document.getElementById('act-text-1').textContent =
+        `Ticket auto-generated by Project Godiva Service Control Platform. Event ID: ${eventId}. Bundle: ${bundle}.`;
+    document.getElementById('act-text-2').textContent =
+        `AI classified event as ${severity} with 97% confidence. Type: ${type}. Recommended bundle: ${bundle}. SOP: ${sop}.`;
+
+    document.getElementById('r-ld').textContent      = `LD — ${bundle}`;
+    document.getElementById('r-ld-bundle').textContent = eventId;
+    document.getElementById('r-conf').textContent    = `Confluence — ${eventId}`;
+    document.getElementById('r-conf-id').textContent = eventId;
+</script>
+</body>
+</html>
