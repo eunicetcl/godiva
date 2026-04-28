@@ -2,9 +2,10 @@
 
 Project Godiva is a service event automation platform that transforms operational signals (emails, alerts, system events) into structured decisions and controlled execution across customer channels.
 
-## How It Works
+## 🔗 Live Demo
+[View Demo](https://godiva.vercel.app)
 
-The system operates as a layered pipeline:
+## How It Works
 
 **Signal → AI Decision → Orchestration → LaunchDarkly → Channel (App / Web / Kiosk)**
 
@@ -13,19 +14,48 @@ The system operates as a layered pipeline:
 - **Execution Layer (LaunchDarkly)** — controls system behaviour through feature flags and bundles
 - **Channel Layer** — applies changes consistently across App, UPortal, and Kiosk
 
-## Purpose
-
-To reduce manual operational effort and response time by:
-- Standardising how service events are handled
-- Enabling faster and more consistent decision-making
-
 ## Build Tracks
 
-| Track | Focus |
-|-------|-------|
-| Track 1 | LaunchDarkly Execution Control |
-| Track 2 | AI Event Decisioning & Signal Intake |
+| Track | Focus | Status |
+|-------|-------|--------|
+| Track 1 | LaunchDarkly Execution Control | ✅ Demo ready |
+| Track 2 | AI Event Decisioning & Signal Intake | ✅ Demo ready |
+| Track 3 | Operational Response & Traceability | ✅ Demo ready |
+| Track 4 | Real-Time Customer Service Visibility | ✅ Demo ready |
 
-## Status
+### Track 1 — LaunchDarkly Execution Control
+Runtime state controlled via predefined feature bundles. Each bundle groups related feature flags into a single coordinated action — one activation sets all dependent flags automatically. Requires a Maintenance/Event ID and human approval before execution.
 
-🚧 In active development
+### Track 2 — AI Event Decisioning & Signal Intake
+Signal intake from email and monitoring systems. AI classifies event type, severity (MINOR / MAJOR / CRITICAL), and recommended action bundle using RAG-assisted classification against SOPs and prior cases.
+
+### Track 3 — Operational Response & Traceability
+Upon bundle activation, the platform automatically notifies the PIC via Microsoft Teams and Slack with full event context. Confluence incident pages, ServiceNow change tickets, and an audit trail are auto-generated — all linked to the same Service Event ID for end-to-end traceability.
+
+### Track 4 — Real-Time Customer Service Visibility
+Customer-facing banners update automatically across App, Web Portal, and Kiosk based on severity — no manual updates required.
+
+| State | Banner |
+|-------|--------|
+| 🟢 Normal | No disruption |
+| 🟡 Degraded | Partial service message |
+| 🔴 Outage | Full outage banner |
+| 🔵 Recovery | Service restored |
+
+## Demo Scenarios
+
+- 🔴 PayNow Gateway Failure (CRITICAL)
+- 🟠 Scheduled Database Maintenance (MAJOR)
+- 🟡 API Performance Degradation (MAJOR)
+- 🟠 Mastercard Gateway Failure (MAJOR)
+
+## Files
+
+| File | Description |
+|------|-------------|
+| `incident-response-demo.html` | Main demo interface |
+| `servicenow-ticket.html` | Mock ServiceNow change ticket |
+
+---
+
+Project Godiva — Automation Project by Eunice Tan
