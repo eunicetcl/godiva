@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Email Signal Agent — Project Godiva</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+    --primary: #0D9488; --primary-light: #CCFBF1; --primary-dark: #0F766E;
+    --border: #E2E8F0; --bg: #F8FAFC; --white: #FFFFFF;
+    --text: #0F172A; --muted: #64748B; --secondary: #475569;
+    --critical: #DC2626; --major: #D97706; --minor: #2563EB; --success: #059669;
+}
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+/* Layout */
+.app { display: grid; grid-template-columns: 340px 1fr; min-height: 100vh; }
+
+/* Left sidebar */
+.sidebar { background: var(--white); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+
+.sidebar-header {
+    padding: 20px 18px 14px;
+    border-bottom: 1px solid var(--border);
+}
+.sidebar-title { font-size: 0.95rem; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; }
+.sidebar-sub { font-size: 0.72rem; color: var(--muted); margin-top: 3px; }
+
+.agent-status {
+    margin: 12px 18px;
+    padding: 10px 12px;
+    background: #F0FDFA;
+    border: 1px solid #5EEAD4;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.75rem;
+    color: var(--primary-dark);
+    font-weight: 600;
+}
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); flex-shrink: 0; box-shadow: 0 0 0 2px #D1FAE5; }
+
+.filter-row {
+    padding: 8px 18px;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--border);
+}
+.fchip {
+    padding: 3px 10px; border-radius: 12px; font-size: 0.68rem; font-weight: 600;
+    cursor: pointer; border: 1px solid var(--border); background: var(--bg); color: var(--muted);
+    transition: all 0.15s;
+}
+.fchip.active { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
+
+.email-list { flex: 1; overflow-y: auto; }
+
+.ecard {
+    padding: 13px 18px 11px 22px;
+    border-bottom: 1px solid #F1F5F9;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.15s;
+}
+.ecard:hover { background: #F8FAFC; }
+.ecard.active { background: #F0FDFA; }
+.ecard.active::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: 0 2px 2px 0; background: var(--primary); }
+
+.sev-dot { position: absolute; left: 8px; top: 17px; width: 7px; height: 7px; border-radius: 50%; }
+.sev-dot.critical { background: var(--critical); }
+.sev-dot.major { background: var(--major); }
+.sev-dot.minor { background: var(--minor); }
+.sev-dot.info { background: #94A3B8; }
+
+.efrom { font-size: 0.78rem; font-weight: 600; color: var(--text); margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.esubj { font-size: 0.75rem; color: var(--secondary); margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.esnip { font-size: 0.7rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 6px; }
+.emeta { display: flex; align-items: center; justify-content: space-between; }
+.etime { font-size: 0.65rem; color: var(--muted); }
+.etags { display: flex; gap: 4px; }
+.etag { padding: 1px 6px; border-radius: 6px; font-size: 0.6rem; font-weight: 700; text-transform: uppercase; }
+.etag.maintenance { background: #FEF3C7; color: #92400E; }
+.etag.payment { background: #DBEAFE; color: #1D4ED8; }
+.etag.vendor { background: #F3E8FF; color: #6B21A8; }
+.etag.alert { background: #FEE2E2; color: #991B1B; }
+.etag.info { background: #F1F5F9; color: #475569; }
+
+/* Main panel */
+.main { display: flex; flex-direction: column; overflow: hidden; }
+
+.main-toolbar {
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--white);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.toolbar-title { font-size: 0.82rem; font-weight: 600; color: var(--muted); }
+.back-btn {
+    padding: 6px 14px; border-radius: 7px; border: 1px solid var(--border);
+    background: var(--white); font-size: 0.75rem; font-weight: 600; cursor: pointer; color: var(--secondary);
+    display: none;
+}
+
+.empty-main {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: var(--muted); text-align: center; padding: 40px;
+}
+.empty-icon { font-size: 3rem; margin-bottom: 16px; opacity: 0.4; }
+.empty-text { font-size: 0.875rem; }
+
+/* Email view */
+.email-view { flex: 1; overflow-y: auto; display: none; }
+
+.email-view-header {
+    padding: 24px 28px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--white);
+}
+.ev-subject { font-size: 1.1rem; font-weight: 700; color: var(--text); margin-bottom: 12px; }
+.ev-meta { display: flex; flex-wrap: wrap; gap: 16px; font-size: 0.78rem; color: var(--muted); }
+.ev-meta strong { color: var(--secondary); font-weight: 600; }
+
+.email-body-area {
+    padding: 24px 28px;
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    font-size: 0.82rem;
+    line-height: 1.75;
+    color: var(--secondary);
+}
+.email-body-area .vendor-logo {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 18px;
+    padding-bottom: 14px; border-bottom: 1px solid var(--border);
+}
+.mc-logo { position: relative; width: 36px; height: 22px; flex-shrink: 0; }
+.mc-l { position: absolute; left: 0; top: 1px; width: 20px; height: 20px; border-radius: 50%; background: #EB001B; }
+.mc-r { position: absolute; right: 0; top: 1px; width: 20px; height: 20px; border-radius: 50%; background: #F79E1B; opacity: 0.9; }
+.vendor-name { font-weight: 700; font-size: 0.9rem; color: var(--text); }
+
+.email-highlight { border-radius: 3px; padding: 1px 3px; transition: background 0.3s; }
+.email-highlight.scanning { background: #FEF9C3; outline: 2px solid #EAB308; }
+.email-highlight.extracted { background: #D1FAE5; outline: 2px solid #10B981; }
+
+/* AI Analysis panel */
+.ai-panel {
+    padding: 24px 28px;
+    background: var(--bg);
+}
+.ai-panel-title {
+    font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--muted); margin-bottom: 14px; display: flex; align-items: center; gap: 6px;
+}
+.ai-steps {
+    display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap;
+}
+.ai-step {
+    display: flex; align-items: center; gap: 5px; padding: 4px 10px;
+    border-radius: 8px; font-size: 0.7rem; font-weight: 600;
+    background: var(--white); border: 1px solid var(--border); color: var(--muted);
+    transition: all 0.3s;
+}
+.ai-step::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.ai-step.done { color: var(--success); background: #F0FDF4; border-color: #86EFAC; }
+.ai-step.active { color: var(--primary); background: var(--primary-light); border-color: var(--primary); animation: pulse-step 1s infinite; }
+@keyframes pulse-step { 0%,100% { opacity:1; } 50% { opacity:0.7; } }
+
+.fields-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px;
+}
+.field-card { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; opacity: 0; transition: opacity 0.3s; }
+.field-card.visible { opacity: 1; }
+.field-card.full { grid-column: 1/-1; }
+.field-card.highlight { background: #F0FDFA; border-color: #5EEAD4; }
+.field-label { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 4px; }
+.field-value { font-size: 0.8rem; font-weight: 600; color: var(--text); }
+
+.sev-pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 10px; font-size: 0.72rem; font-weight: 700; }
+.sev-pill.critical { background: #FEE2E2; color: #991B1B; }
+.sev-pill.major { background: #FEF3C7; color: #92400E; }
+.sev-pill.minor { background: #DBEAFE; color: #1D4ED8; }
+.sev-pill.info { background: #F1F5F9; color: #475569; }
+
+.inject-btn {
+    width: 100%; padding: 13px; background: var(--primary); color: white; border: none;
+    border-radius: 10px; font-size: 0.875rem; font-weight: 700; cursor: pointer;
+    transition: background 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.inject-btn:hover { background: var(--primary-dark); }
+
+.inject-success {
+    display: none; background: #D1FAE5; border: 1px solid #6EE7B7; border-radius: 10px;
+    padding: 13px; text-align: center; font-size: 0.82rem; font-weight: 600; color: #065F46;
+}
+
+/* Caution banner */
+.caution-bar {
+    background: #FEF3C7; border: 1px solid #FCD34D; border-radius: 6px;
+    padding: 8px 12px; font-size: 0.72rem; color: #78350F; margin-bottom: 12px;
+    display: flex; align-items: flex-start; gap: 6px;
+}
+
+@media (max-width: 700px) {
+    .app { grid-template-columns: 1fr; }
+    .main { display: none; }
+    .main.show { display: flex; position: fixed; inset: 0; z-index: 10; background: var(--white); }
+    .back-btn { display: flex !important; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+    <!-- Sidebar: Email List -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title">📧 Email Signal Agent</div>
+            <div class="sidebar-sub">AI-powered inbox · Project Godiva</div>
+        </div>
+        <div class="agent-status">
+            <div class="status-dot"></div>
+            Agent active · 5 emails scanned · 2 service signals detected
+        </div>
+        <div class="filter-row" id="filter-row">
+            <div class="fchip active" onclick="filterEmails('all', this)">All (5)</div>
+            <div class="fchip" onclick="filterEmails('maintenance', this)">Maintenance (2)</div>
+            <div class="fchip" onclick="filterEmails('info', this)">Info (3)</div>
+        </div>
+        <div class="email-list" id="email-list"></div>
+    </div>
+
+    <!-- Main: Email View + AI Analysis -->
+    <div class="main" id="main-panel">
+        <div class="main-toolbar">
+            <button class="back-btn" onclick="closeMain()">← Back</button>
+            <span class="toolbar-title" id="toolbar-title">Select an email to analyse</span>
+        </div>
+        <div class="empty-main" id="empty-main">
+            <div class="empty-icon">📭</div>
+            <div class="empty-text">Select an email from the inbox<br>to see AI signal analysis</div>
+        </div>
+        <div class="email-view" id="email-view"></div>
+    </div>
+</div>
+
+<script>
+const EMAILS = [
+    {
+        id: 'mpgs-1',
+        from: 'Mastercard Service Event Management',
+        fromEmail: 'no-reply@mastercard-email.com',
+        subject: 'Planned Maintenance: Mastercard Gateway - Asia Pacific (AP) Region',
+        date: 'Tue, 29 Apr 2026, 09:14',
+        snippet: 'Mastercard teams will perform planned maintenance in Asia Pacific (AP) Region...',
+        category: 'maintenance',
+        severity: 'major',
+        tags: ['maintenance', 'payment', 'vendor'],
+        body: `
+            <div class="vendor-logo">
+                <div class="mc-logo"><div class="mc-l"></div><div class="mc-r"></div></div>
+                <div class="vendor-name">Mastercard</div>
+            </div>
+            <div style="font-weight:700; font-size:0.85rem; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:14px; color:#111827;">Planned Maintenance</div>
+            <p style="margin-bottom:10px;"><strong>Date:</strong> <span class="email-highlight" id="h-date">29 April 2026</span></p>
+            <p style="margin-bottom:12px; font-size:0.9rem; font-weight:600; color:#111827;">Mastercard teams will perform planned maintenance in <span class="email-highlight" id="h-region">Asia Pacific (AP) Region</span>.</p>
+            <p style="margin-bottom:10px;"><strong>To:</strong> Mastercard Gateway - Asia Pacific (AP) contacts</p>
+            <p style="margin-bottom:10px;"><strong>Impact Description:</strong> <span class="email-highlight" id="h-impact">During the scheduled window, impacted customers may experience a brief increase in transaction timeouts and/or failed transactions, lasting approximately one minute.</span></p>
+            <hr style="border:none;border-top:1px solid #F3F4F6;margin:14px 0;">
+            <p style="margin-bottom:8px;"><strong>Maintenance Start:</strong> <span class="email-highlight" id="h-start">20 April 2026, 11:00 CT (16:00 UTC)</span></p>
+            <p style="margin-bottom:8px;"><strong>Maintenance End:</strong> <span class="email-highlight" id="h-end">20 April 2026, 12:00 CT (17:00 UTC)</span></p>
+            <p style="margin-bottom:8px;"><strong>Mastercard Reference:</strong> <span class="email-highlight" id="h-ref">CRQ000001756755</span></p>
+            <p style="margin-bottom:8px;"><strong>Contact:</strong> gateway_support@mastercard.com</p>
+        `,
+        analysis: {
+            service: 'Mastercard Gateway (MPGS) — AP Region',
+            type: 'Scheduled Maintenance',
+            severity: 'major',
+            window: '20 Apr 2026, 16:00–17:00 UTC',
+            impact: 'Transaction timeouts / failed transactions (~1 min)',
+            reference: 'CRQ000001756755',
+            sop: 'SOP-PAY-003',
+            bundle: 'MASTERCARD_MAINTENANCE_BUNDLE',
+            summary: 'Schedule maintenance window and activate fallback payment routing before 16:00 UTC on 20 Apr.'
+        },
+        highlights: ['h-date','h-region','h-impact','h-start','h-end','h-ref']
+    },
+    {
+        id: 'paynow-1',
+        from: 'SP Group IT Operations',
+        fromEmail: 'it-ops@spgroup.com.sg',
+        subject: '[ALERT] PayNow Gateway — Elevated Transaction Failure Rate',
+        date: 'Tue, 29 Apr 2026, 08:47',
+        snippet: 'We are detecting elevated failure rates on the PayNow payment gateway. Current failure rate: 34%...',
+        category: 'maintenance',
+        severity: 'critical',
+        tags: ['alert', 'payment'],
+        body: `
+            <div style="background:#FEE2E2; border:1px solid #FECACA; border-radius:8px; padding:12px 16px; margin-bottom:16px;">
+                <div style="font-weight:700; font-size:0.85rem; color:#991B1B; margin-bottom:4px;">🔴 CRITICAL ALERT — Immediate Action Required</div>
+                <div style="font-size:0.78rem; color:#7F1D1D;">Automated monitoring system has detected a service degradation event.</div>
+            </div>
+            <p style="margin-bottom:10px;"><strong>Alert Time:</strong> <span class="email-highlight" id="h-atime">29 Apr 2026, 08:47 SGT</span></p>
+            <p style="margin-bottom:10px;"><strong>Affected Service:</strong> <span class="email-highlight" id="h-service">PayNow Payment Gateway</span></p>
+            <p style="margin-bottom:10px;"><strong>Failure Rate:</strong> <span class="email-highlight" id="h-rate">34% (threshold: 5%)</span></p>
+            <p style="margin-bottom:10px;"><strong>Impact:</strong> <span class="email-highlight" id="h-pimpact">Bill payment transactions via PayNow are failing. Customers unable to complete payments on App and Web Portal.</span></p>
+            <p style="margin-bottom:10px;"><strong>Affected Channels:</strong> <span class="email-highlight" id="h-channels">Mobile App, Web Portal (UPortal), Kiosk</span></p>
+            <p style="margin-bottom:10px;"><strong>Recommended Action:</strong> Activate PayNow incident bundle in LaunchDarkly and enable credit card fallback.</p>
+            <hr style="border:none;border-top:1px solid #F3F4F6;margin:14px 0;">
+            <p style="font-size:0.75rem; color:#6B7280;">This alert was generated by the SP Group monitoring system. Please do not reply to this email.</p>
+        `,
+        analysis: {
+            service: 'PayNow Payment Gateway',
+            type: 'Incident',
+            severity: 'critical',
+            window: 'Immediate — ongoing',
+            impact: 'Bill payments failing on App, Web Portal and Kiosk. Failure rate 34%.',
+            reference: 'INC-20260429-001',
+            sop: 'SOP-PAY-001',
+            bundle: 'PAYNOW_OUTAGE_BUNDLE',
+            summary: 'Activate PayNow outage bundle immediately — disable PayNow, enable credit card fallback, show maintenance banner.'
+        },
+        highlights: ['h-atime','h-service','h-rate','h-pimpact','h-channels']
+    },
+    {
+        id: 'sap-1',
+        from: 'SAP Operations',
+        fromEmail: 'sap-ops@spgroup.com.sg',
+        subject: 'SAP Billing System — Scheduled Downtime Notice',
+        date: 'Mon, 28 Apr 2026, 17:30',
+        snippet: 'The SAP billing system will undergo scheduled maintenance this weekend...',
+        category: 'maintenance',
+        severity: 'major',
+        tags: ['maintenance', 'vendor'],
+        body: `
+            <div style="font-weight:700; font-size:0.85rem; margin-bottom:14px; color:#111827;">SAP Billing System — Scheduled Maintenance Notice</div>
+            <p style="margin-bottom:10px;">Dear Team,</p>
+            <p style="margin-bottom:12px;">Please be advised that the SAP Billing system will undergo <span class="email-highlight" id="h-stype">scheduled maintenance</span> this weekend.</p>
+            <p style="margin-bottom:10px;"><strong>System:</strong> <span class="email-highlight" id="h-ssys">SAP Billing / S4HANA</span></p>
+            <p style="margin-bottom:10px;"><strong>Maintenance Window:</strong> <span class="email-highlight" id="h-swin">Sat 3 May 2026, 22:00 – Sun 4 May 2026, 06:00 SGT</span></p>
+            <p style="margin-bottom:10px;"><strong>Impact:</strong> <span class="email-highlight" id="h-simpact">Bill generation, payment posting, and account balance queries will be unavailable during this window.</span></p>
+            <p style="margin-bottom:10px;"><strong>Change Reference:</strong> <span class="email-highlight" id="h-sref">CHG-SAP-2026-0503</span></p>
+            <p style="margin-bottom:10px;">Please ensure all pending billing runs are completed before 20:00 SGT on Saturday.</p>
+            <p style="margin-bottom:10px;">Regards,<br>SAP Operations Team</p>
+        `,
+        analysis: {
+            service: 'SAP Billing / S4HANA',
+            type: 'Scheduled Maintenance',
+            severity: 'major',
+            window: 'Sat 3 May 2026, 22:00 – Sun 4 May 2026, 06:00 SGT',
+            impact: 'Bill generation, payment posting, and account queries unavailable',
+            reference: 'CHG-SAP-2026-0503',
+            sop: 'SOP-SAP-002',
+            bundle: 'SAP_MAINTENANCE_BUNDLE',
+            summary: 'Schedule SAP maintenance banners and disable billing-dependent features from 22:00 SGT Saturday.'
+        },
+        highlights: ['h-stype','h-ssys','h-swin','h-simpact','h-sref']
+    },
+    {
+        id: 'info-1',
+        from: 'IT Helpdesk',
+        fromEmail: 'helpdesk@spgroup.com.sg',
+        subject: 'Q2 2026 IT Newsletter — New Tools & Updates',
+        date: 'Mon, 28 Apr 2026, 10:00',
+        snippet: 'Welcome to the Q2 2026 IT Newsletter. This quarter we are rolling out several new productivity tools...',
+        category: 'info',
+        severity: 'info',
+        tags: ['info'],
+        body: `
+            <p style="margin-bottom:12px;">Welcome to the Q2 2026 IT Newsletter.</p>
+            <p style="margin-bottom:10px;">This quarter we are rolling out several new productivity tools and security enhancements across the organisation.</p>
+            <p style="margin-bottom:10px;"><strong>Highlights:</strong></p>
+            <ul style="margin-left:18px; margin-bottom:12px; line-height:2;">
+                <li>Microsoft 365 Copilot rollout begins May 2026</li>
+                <li>Updated VPN client for remote access</li>
+                <li>New password policy effective 1 June 2026</li>
+                <li>MFA enforcement for all systems from 15 May 2026</li>
+            </ul>
+            <p style="margin-bottom:10px;">For more information, visit the IT Helpdesk portal or contact helpdesk@spgroup.com.sg.</p>
+        `,
+        analysis: {
+            service: 'General IT',
+            type: 'Informational',
+            severity: 'info',
+            window: null,
+            impact: 'No service impact',
+            reference: 'IT-NL-Q2-2026',
+            sop: null,
+            bundle: null,
+            summary: 'Informational newsletter — no action required for service operations.'
+        },
+        highlights: []
+    },
+    {
+        id: 'info-2',
+        from: 'Finance Team',
+        fromEmail: 'finance@spgroup.com.sg',
+        subject: 'April 2026 — Month-End Closing Reminder',
+        date: 'Fri, 25 Apr 2026, 16:00',
+        snippet: 'Reminder that April month-end closing is on 30 April 2026. Please submit all claims by 5pm...',
+        category: 'info',
+        severity: 'info',
+        tags: ['info'],
+        body: `
+            <p style="margin-bottom:12px;">Dear All,</p>
+            <p style="margin-bottom:10px;">This is a reminder that the April 2026 month-end closing is on <strong>30 April 2026</strong>.</p>
+            <p style="margin-bottom:10px;">Please submit all expense claims, purchase orders, and invoices by <strong>5:00 PM on 30 April</strong>.</p>
+            <p style="margin-bottom:10px;">Late submissions will be processed in the following month's cycle.</p>
+            <p style="margin-bottom:10px;">Thank you for your cooperation.</p>
+            <p>Regards,<br>Finance Team</p>
+        `,
+        analysis: {
+            service: 'General Finance',
+            type: 'Informational',
+            severity: 'info',
+            window: null,
+            impact: 'No service impact',
+            reference: null,
+            sop: null,
+            bundle: null,
+            summary: 'Month-end closing reminder — no action required for service operations.'
+        },
+        highlights: []
+    }
+];
+
+let activeFilter = 'all';
+let activeEmail = null;
+
+const sevLabel = { critical: '🔴 CRITICAL', major: '🟠 MAJOR', minor: '🟡 MINOR', info: '⚪ INFO' };
+
+function renderList(filter) {
+    const list = document.getElementById('email-list');
+    const filtered = filter === 'all' ? EMAILS : EMAILS.filter(e => e.category === filter);
+    list.innerHTML = filtered.map(e => `
+        <div class="ecard ${activeEmail?.id === e.id ? 'active' : ''}" onclick="openEmail('${e.id}')">
+            <div class="sev-dot ${e.severity}"></div>
+            <div class="efrom">${e.from}</div>
+            <div class="esubj">${e.subject}</div>
+            <div class="esnip">${e.snippet}</div>
+            <div class="emeta">
+                <div class="etags">${e.tags.map(t => `<span class="etag ${t}">${t}</span>`).join('')}</div>
+                <div class="etime">${e.date.split(',')[1]?.trim() || e.date}</div>
+            </div>
+        </div>`).join('');
+}
+
+function filterEmails(cat, el) {
+    activeFilter = cat;
+    document.querySelectorAll('.fchip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    renderList(cat);
+}
+
+async function openEmail(id) {
+    const email = EMAILS.find(e => e.id === id);
+    if (!email) return;
+    activeEmail = email;
+    renderList(activeFilter);
+
+    const main = document.getElementById('main-panel');
+    main.classList.add('show');
+    document.getElementById('empty-main').style.display = 'none';
+    document.getElementById('toolbar-title').textContent = email.from;
+
+    const view = document.getElementById('email-view');
+    view.style.display = 'block';
+
+    // Caution banner for external emails
+    const caution = email.fromEmail.includes('mastercard') || email.fromEmail.includes('sap-ops') ?
+        `<div class="caution-bar">⚠️ <span><strong>CAUTION:</strong> This email came from outside of SP Group. Please verify the sender email address.</span></div>` : '';
+
+    view.innerHTML = `
+        <div class="email-view-header">
+            <div class="ev-subject">${email.subject}</div>
+            <div class="ev-meta">
+                <span><strong>From:</strong> ${email.from} &lt;${email.fromEmail}&gt;</span>
+                <span><strong>Date:</strong> ${email.date}</span>
+            </div>
+        </div>
+        <div class="email-body-area">
+            ${caution}
+            ${email.body}
+        </div>
+        <div class="ai-panel">
+            <div class="ai-panel-title">🤖 AI Signal Analysis</div>
+            <div class="ai-steps" id="ai-steps">
+                <div class="ai-step" id="step-read">Reading email</div>
+                <div class="ai-step" id="step-extract">Extracting fields</div>
+                <div class="ai-step" id="step-classify">Classifying severity</div>
+                <div class="ai-step" id="step-match">Matching SOP</div>
+                <div class="ai-step" id="step-ready">Ready</div>
+            </div>
+            <div class="fields-grid" id="fields-grid" style="display:none;"></div>
+            <div id="inject-container" style="display:none;"></div>
+        </div>`;
+
+    await runAnalysis(email);
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function runAnalysis(email) {
+    const steps = ['step-read','step-extract','step-classify','step-match','step-ready'];
+
+    async function setStep(id, state) {
+        steps.forEach(s => {
+            const el = document.getElementById(s);
+            if (el) el.classList.remove('active','done');
+        });
+        const el = document.getElementById(id);
+        if (el) el.classList.add(state);
+    }
+
+    // Step 1 — reading
+    setStep('step-read','active');
+    await delay(600);
+    document.getElementById('step-read')?.classList.replace('active','done');
+
+    // Step 2 — extract (highlight fields)
+    setStep('step-extract','active');
+    for (const hid of email.highlights) {
+        const el = document.getElementById(hid);
+        if (el) {
+            el.classList.add('scanning');
+            await delay(300);
+            el.classList.remove('scanning');
+            el.classList.add('extracted');
+        }
+    }
+    await delay(200);
+    document.getElementById('step-extract')?.classList.replace('active','done');
+
+    // Step 3 — classify
+    setStep('step-classify','active');
+    await delay(700);
+    document.getElementById('step-classify')?.classList.replace('active','done');
+
+    // Step 4 — SOP match
+    setStep('step-match','active');
+    await delay(600);
+    document.getElementById('step-match')?.classList.replace('active','done');
+
+    // Step 5 — ready
+    setStep('step-ready','active');
+    await delay(300);
+    document.getElementById('step-ready')?.classList.replace('active','done');
+
+    // Show fields
+    const a = email.analysis;
+    const grid = document.getElementById('fields-grid');
+    grid.style.display = 'grid';
+
+    const fields = [
+        { label: 'Service', value: a.service, cls: '' },
+        { label: 'Type', value: a.type, cls: '' },
+        { label: 'Severity', value: `<span class="sev-pill ${a.severity}">${sevLabel[a.severity]}</span>`, cls: '', raw: true },
+        { label: 'Window', value: a.window || 'Not specified', cls: '' },
+        { label: 'Impact', value: a.impact, cls: 'full' },
+        { label: 'Reference', value: a.reference || 'None', cls: '' },
+        { label: 'SOP', value: a.sop || 'N/A', cls: '' },
+        { label: 'LD Bundle', value: a.bundle ? `<span style="font-family:monospace;font-size:0.72rem;">${a.bundle}</span>` : 'N/A', cls: '', raw: true },
+        { label: 'AI Summary', value: a.summary, cls: 'full highlight' }
+    ];
+
+    grid.innerHTML = fields.map((f,i) => `
+        <div class="field-card ${f.cls}" id="fc-${i}">
+            <div class="field-label">${f.label}</div>
+            <div class="field-value">${f.raw ? f.value : escHtml(f.value)}</div>
+        </div>`).join('');
+
+    // Animate fields in
+    for (let i = 0; i < fields.length; i++) {
+        await delay(80);
+        document.getElementById(`fc-${i}`)?.classList.add('visible');
+    }
+
+    // Show inject button (only for service-related emails)
+    const injectContainer = document.getElementById('inject-container');
+    if (a.bundle) {
+        injectContainer.style.display = 'block';
+        injectContainer.innerHTML = `
+            <button class="inject-btn" id="inject-btn" onclick="injectSignal('${email.id}')">
+                ⚡ Inject into Demo Workflow
+            </button>
+            <div class="inject-success" id="inject-success">
+                ✅ Signal copied to clipboard! Paste into the Signal Input field in the demo.
+            </div>`;
+    } else {
+        injectContainer.style.display = 'block';
+        injectContainer.innerHTML = `<div style="text-align:center; padding:12px; font-size:0.78rem; color:var(--muted);">ℹ️ No service action required for this email.</div>`;
+    }
+}
+
+function injectSignal(id) {
+    const email = EMAILS.find(e => e.id === id);
+    if (!email) return;
+    const a = email.analysis;
+    const signal = `${a.severity.toUpperCase()} SERVICE EVENT\n\nFrom: ${email.from} <${email.fromEmail}>\nSubject: ${email.subject}\nDate: ${email.date}\n\nService: ${a.service}\nType: ${a.type}\nSeverity: ${a.severity.toUpperCase()}\nImpact: ${a.impact}\nMaintenance Window: ${a.window || 'TBC'}\nReference: ${a.reference || 'N/A'}\nSOP: ${a.sop || 'N/A'}\nBundle: ${a.bundle}\n\nSummary: ${a.summary}`;
+
+    navigator.clipboard.writeText(signal).then(() => {
+        document.getElementById('inject-btn').style.display = 'none';
+        document.getElementById('inject-success').style.display = 'block';
+        setTimeout(() => {
+            document.getElementById('inject-btn').style.display = 'flex';
+            document.getElementById('inject-success').style.display = 'none';
+        }, 4000);
+    }).catch(() => {
+        prompt('Copy this signal and paste into the demo Signal Input:', signal);
+    });
+}
+
+function closeMain() {
+    document.getElementById('main-panel').classList.remove('show');
+    activeEmail = null;
+    renderList(activeFilter);
+}
+
+function escHtml(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Init
+renderList('all');
+</script>
+</body>
+</html>
